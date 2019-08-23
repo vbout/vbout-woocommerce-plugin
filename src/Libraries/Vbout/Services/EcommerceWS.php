@@ -22,11 +22,9 @@ class EcommerceWS extends Vbout
         try {
             $this->set_method('POST');
             if ($action == 1 )
-                $insertRecord = $this->addCustomer($data);
+                $insertRecord = $this->upsertCustomer($data);
             else if($action == 2)
                 $insertRecord = $this->editCustomer($data);
-            else if ($action ==3)
-                $insertRecord = $this->removeCustomer($data);
             else $result = "Error with Action taken.";
 
             if ($insertRecord != null && isset($insertRecord['data'])) {

@@ -513,7 +513,6 @@ class WCVbout
     {
         if($this->customers == 1 )
         {
-
             $current_user = wp_get_current_user();
 
             $customer = array(
@@ -525,7 +524,7 @@ class WCVbout
                 'ipaddress'     => $_SERVER['REMOTE_ADDR'],
                 "uniqueid"      => $this->sessionId,
             );
-            $result = $this->vboutApp2->Customer($customer,2);
+            $result = $this->vboutApp2->Customer($customer,1);
         }
 
     }
