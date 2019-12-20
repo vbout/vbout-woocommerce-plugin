@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Plugin Name: Vbout
+ * Plugin Name: Vbout Woocommerce Plugin
  * Plugin URI: http://woocommerce.com/products/woocommerce-extension/
  * Description: A Woocommerce extension to integrate with Vbout.
- * Version: 1.0.1
+ * Version: 2.0.0
  * Author: Vbout Inc.
- * Author URI: http://vbout.com
- * Developer: Mark Tristan Victorio
- * Developer URI: http://vbout.com
+ * Author URI: https://vbout.com
+ * Developer: Mohamad Ghannoum
+ * Developer URI: https://vbout.com
  * Text Domain: vbout
  * Domain Path: /languages
  *

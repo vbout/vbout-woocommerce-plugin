@@ -68,6 +68,10 @@ class WCVbout
             add_action('pre_get_posts', array($this, 'wc_product_search'));
             add_action('wp_login', array($this, 'wc_customer_update'), 99 );
             add_action( 'woocommerce_process_product_meta', array($this, 'wc_product_add'), 12, 2 );
+            add_action( 'woocommerce_before_checkout_process', array($this, 'wc_checkout_add'), 10);
+
+            // Add the tracker
+//            add_action('wp_head', 'add_tracker');
 
             add_action( 'woocommerce_admin_order_data_after_order_details',  array($this,'wc_order_update'),10,1);
             // Register integrations
@@ -331,8 +335,9 @@ class WCVbout
                 'api_key' => $this->apiKey,
             );
             $result = $vboutApp->sendAPIIntegrationCreation($settingsPayload, 3);
-            delete_option('woocommerce_' . $this->integrationId . '_settings');
         }
+        delete_option('woocommerce_' . $this->integrationId . '_settings');
+
     }
 
 
@@ -623,7 +628,7 @@ class WCVbout
                 $discountPrice = '0.0';
             else $discountPrice = $product->get_sale_price();
 
-            $product = array(
+            $productData = array(
                 "customer"      => $current_user->user_email,
                 "productid"     => $product->get_id(),
                 "name"          => $product->get_name(),
@@ -633,6 +638,7 @@ class WCVbout
                 "discountprice" => $discountPrice,
                 "currency"      => get_woocommerce_currency(),
                 "sku"           => $product->get_sku(),
+                'ipaddress'     =>$_SERVER['REMOTE_ADDR'],
                 "categoryid"    => (string)$product->get_category_ids()[0],
                 "category"      => get_the_category_by_ID($product->get_category_ids()[0]),
                 "link"          => get_permalink($product->get_id()),
@@ -641,7 +647,7 @@ class WCVbout
                 "uniqueid"      => $this->sessionId,
             );
 
-            $result = $this->vboutApp2->Product($product, 1);
+            $result = $this->vboutApp2->Product($productData, 1);
         }
     }
     //Function Category
@@ -699,6 +705,22 @@ class WCVbout
             $html = '';
             $current_user = wp_get_current_user();
 
+            //if Checkout add user guest
+            if($_SESSION['checkout_bool'])
+            {
+                $customer = array(
+                    "firstname"     => $order->get_billing_first_name(),
+                    "lastname"      => $order->get_billing_last_name(),
+                    "email"         => $order->get_billing_email(),
+                    'api_key'       => $this->apiKey,
+                    'domain'        => $this->domain,
+                    'ipaddress'     => $_SERVER['REMOTE_ADDR'],
+                    "uniqueid"      => $this->sessionId,
+                );
+                $result = $this->vboutApp2->Customer($customer,1);
+                unset($_SESSION['checkout_bool']);
+            }
+
             $order = array(
                 "cartid"            => $_SESSION['cartID'],
                 "uniqueid"          => $this->sessionId,
@@ -719,9 +741,9 @@ class WCVbout
                 "notes"             => $order->get_customer_note(),
                 "storename"         => $_SERVER['HTTP_HOST'],
                 "customerinfo"      => array(
-                    "firstname"         => $current_user->user_firstname,
-                    "lastname"          => $current_user->user_lastname,
-                    "email"             => $current_user->user_email,
+                    "firstname"         => $order->get_billing_first_name(),
+                    "lastname"          => $order->get_billing_last_name(),
+                    "email"             => $order->get_billing_email(),
                     "phone"             => $order->get_billing_phone(),
                     "company"           => $order->get_billing_company(),
                 ),
@@ -765,9 +787,7 @@ class WCVbout
             $current_user = get_userdata( $order->get_customer_id() );
 
             $order = array(
-                'ipaddress'         => $_SERVER['REMOTE_ADDR'],
                 "domain"            => $this->domain,
-                "uniqueid"          => $this->sessionId,
                 "orderid"           => $order->get_id(),
                 "paymentmethod"     => $order->get_payment_method(),
                 "grandtotal"        => $order->get_total(),
@@ -819,5 +839,104 @@ class WCVbout
             $result = $this->vboutApp2->Order($order, 2);
         }
     }
+    public function wc_checkout_add()
+    {
+        if ($this->abandoned_carts == 1) {
 
+            global $woocommerce;
+            $items = $woocommerce->cart->get_cart();
+
+            $current_user = wp_get_current_user();
+            if (isset($_SESSION['cartID']))
+                $this->cartID = $_SESSION['cartID'];
+            else {
+                $this->cartID = sha1(mt_rand(1, 90000) . 'SALT');
+                $_SESSION['cartID'] = $this->cartID;
+            }
+
+            // Checkout ?
+            $_SESSION['checkout_bool'] = true;
+
+            $store = array(
+                "domain"        => $this->domain,
+                "cartcurrency"  => get_woocommerce_currency(),
+                "cartid"        => $this->cartID,
+                'ipaddress'     => $_SERVER['REMOTE_ADDR'],
+                "customer"      => $current_user->user_email,
+                "storename"     => $_SERVER['HTTP_HOST'],
+                "abandonurl"    => $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'],
+                "uniqueid"      => $this->sessionId,
+            );
+
+            $result = $this->vboutApp2->Cart($store, 1);
+            foreach ($items as $item) {
+
+                $product = $item['data'];
+
+                //Category
+                $categoryId = 'N/A';
+                $categoryName = 'N/A';
+                $VARIATION = wc_get_product($product->get_id());
+                $variationArray = array();
+                $product_s = wc_get_product($VARIATION->get_parent_id());
+
+                if ($product_s->product_type == 'variable') {
+                    $parentProductId = $VARIATION->get_parent_id();
+                    $productid = $parentProductId;
+
+                    $product_s = new \WC_Product_Variable($parentProductId);
+                    $variations = $product_s->get_available_variations();
+                    // Get variations
+                    foreach ($variations as $variation) {
+                        if ($variation['variation_id'] == $product->get_id()) {
+                            $titleKeys = array_keys($variation['attributes']);
+                            foreach ($titleKeys as $titleKey) {
+                                if (isset($variation['attributes'][$titleKey])) {
+                                    $title = explode('attribute_pa_', $titleKey);
+                                    if($title != '' || $variation['attributes'][$titleKey] != '' )
+                                        $variationArray[$title[1]] = $variation['attributes'][$titleKey];
+                                }
+                            }
+                        }
+                    }
+                    // Get image
+                    if (get_the_post_thumbnail_url($product->get_id(), 'full') == '')
+                        $image = get_the_post_thumbnail_url($parentProductId, 'full');
+                    else $image = get_the_post_thumbnail_url($product->get_id(), 'full');
+                    $terms = get_the_terms($parentProductId, 'product_cat');
+                } else {
+                    $productid = $product->get_id();
+                    $image = get_the_post_thumbnail_url($product->get_id(), 'full');
+                    $terms = get_the_terms($product->get_id(), 'product_cat');
+                }
+                if (count($terms) > 0) {
+                    $categoryId = $terms[0]->term_id;
+                    $categoryName = $terms[0]->name;
+                }
+                if ($product->get_sale_price() == 0)
+                    $discountPrice = '0.0';
+                else $discountPrice = $product->get_sale_price();
+
+                $productData = array(
+                    "domain"        => $this->domain,
+                    "cartid"        => $this->cartID,
+                    "productid"     => (string)$productid,
+                    "name"          => $product->get_name(),
+                    "price"         => $product->get_price(),
+                    "description"   => $product->get_description(),
+                    "discountprice" => $discountPrice,
+                    "currency"      => get_woocommerce_currency(),
+                    "quantity"      => (string)$item['quantity'],
+                    "categoryid"    => $categoryId,
+                    "variation"     => $variationArray,
+                    "category"      => $categoryName,
+                    "sku"           => $product->get_sku(),
+                    "link"          => get_permalink($product->get_id()),
+                    "image"         => $image,
+                    "uniqueid"      => $this->sessionId,
+                );
+                $result = $this->vboutApp2->CartItem($productData, 1);
+            }
+        }
+    }
 }
