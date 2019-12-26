@@ -13,11 +13,11 @@ WooCommerce Plugin that link Metadata of orders, carts customers , searches, pro
   - Syncing Product   ( For Product data prior the use of the plugin)
   ## limitations : 
     1 - Upon registration, the only attribute is sent is user email, first name and last name are not sent (this is handeled once this user signs in).
-    2 - if the Administrator has many Customers/Products, the sync might take a while , so it needs optimization with cron.php in Magento.
+    2 - if the Administrator has many Customers/Products, the sync might take a while , so it needs optimization with cron.php in WooCommerce.
   
 ## Variations : 
   
- Variations in Magento are handeled as a product with aditional SKU (ammended to the original SKu EX: orginialsky-newsku : xxxx-yyyy). 
+ Variations in WooCommerce are handeled as a product with aditional SKU (ammended to the original SKu EX: orginialsky-newsku : xxxx-yyyy). 
  For this they are being handeled as Parent product (origninal SKU and Price ) are added to product Feed, and all the ammendments ( SKKU and Price ) 
  are added in the cart product data.
  
