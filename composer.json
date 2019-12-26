@@ -1,0 +1,13 @@
+{
+    "name": "mark/vbout",
+    "description": "An application layer that integrates Vbout to WooCommerce.",
+    "type": "project",
+    "minimum-stability": "dev",
+    "require": {
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
