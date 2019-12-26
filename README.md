@@ -17,22 +17,17 @@ WooCommerce Plugin that link Metadata of orders, carts customers , searches, pro
   
 ## Variations : 
   
- Variations in WooCommerce are handeled as a product with aditional SKU (ammended to the original SKu EX: orginialsky-newsku : xxxx-yyyy). 
- For this they are being handeled as Parent product (origninal SKU and Price ) are added to product Feed, and all the ammendments ( SKKU and Price ) 
- are added in the cart product data.
- 
- Variations are sent as an array upon adding a product, syncing a product and viewing a produnct.
+ Variations are sent as an array upon adding a product, syncing a product and viewing a product. But when purchasing a certain variation of a product, we send the new product data to be viewed ( New Category, New Price, New Variation Name , New SKU) to be previewed in Vbout.
  
 ## Search : 
   
-  There is a no observer for hooks activity for this we added a listener/observer for every page load, where we searched if it has Getter 'q'
-  if it is present, this means than there is a search query and we handle it.
+There is an listener/observer for search and it recives the "term" searched form.
   
 ## Orders and Abandonded Carts : 
   
   ### Checkout : 
     
-        There is no listener for checkout and does the following  since WooCommerce doesn't allow you to checkout without being registered and logged in first.
+        There is a listener for checkout and does the following  since WooCommerce that allows you to checkout without registration, and it acts like add-to-cart + order-creation.
 
   ### Create and Update Cart  : 
           there is a listener for both Cart Update and Cart create and they have the following functionalities : 
