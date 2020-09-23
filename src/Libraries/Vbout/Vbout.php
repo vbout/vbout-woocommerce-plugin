@@ -139,7 +139,8 @@ class Vbout {
 			foreach($fields as $key=>$value) { 
 				if (is_array($value)) {
 					foreach($value as $k1=>$v1)
-						$fields_string .= $key . '[' . $k1 . ']='.$v1.'&'; 
+						if(!is_object($v1))
+						    $fields_string .= $key . '[' . $k1 . ']='.$v1.'&';
 				} else {
 					$fields_string .= $key.'='.$value.'&'; 
 				}
