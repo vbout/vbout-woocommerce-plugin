@@ -674,7 +674,7 @@ class WCVbout
     //Function product Search Query
     public function wc_product_search()
     {
-        if(get_search_query() != ''){
+        if(!empty(get_search_query())){
             if($this->search == 1)
             {
                 $searchQuery    = get_search_query();
