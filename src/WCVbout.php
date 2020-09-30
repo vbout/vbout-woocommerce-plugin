@@ -126,28 +126,28 @@ class WCVbout
         }
 
         //New Settings
-        if ( $WCSettings['abandoned_carts'] == 'yes')
+        if ( isset($WCSettings['abandoned_carts']) && $WCSettings['abandoned_carts'] == 'yes')
             $this->abandoned_carts = 1;
 
-        if ( $WCSettings['product_visits'] == 'yes')
+        if ( isset($WCSettings['product_visits']) && $WCSettings['product_visits'] == 'yes')
             $this->product_visits = 1;
 
-        if ( $WCSettings['category_visits'] == 'yes')
+        if ( isset($WCSettings['product_visits']) && $WCSettings['category_visits'] == 'yes')
             $this->category_visits = 1;
 
-        if ( $WCSettings['customers'] == 'yes')
+        if ( isset($WCSettings['product_visits']) && $WCSettings['customers'] == 'yes')
             $this->customers = 1;
 
-        if ( $WCSettings['product_feed'] == 'yes')
+        if ( isset($WCSettings['product_visits']) && $WCSettings['product_feed'] == 'yes')
             $this->product_feed = 1;
 
-        if ( $WCSettings['current_customers'] == 'yes')
+        if ( isset($WCSettings['product_visits']) && $WCSettings['current_customers'] == 'yes')
             $this->current_customers = 1;
 
-        if ( $WCSettings['sync_current_products'] == 'yes')
+        if ( isset($WCSettings['sync_current_products']) && $WCSettings['sync_current_products'] == 'yes')
             $this->sync_current_products = 1;
 
-        if ( $WCSettings['search'] == 'yes')
+        if ( isset($WCSettings['search']) && $WCSettings['search'] == 'yes')
             $this->search = 1;
 
         $this->apiKey                   = $WCSettings['apiKey'];
@@ -228,6 +228,9 @@ class WCVbout
         $users = get_users();
         if (count($users) > 0) {
             foreach ($users as $user) {
+                $first_name = '';
+                $last_name = '';
+
                 $display_name = explode(" ",$user->data->display_name);
                 if (isset($display_name[0]))
                     $first_name = $display_name[0];
@@ -283,7 +286,7 @@ class WCVbout
                 $product_s = wc_get_product( $productValue->ID );
 
                 $variationArray = array();
-                if ($product_s->product_type == 'variable') {
+                if ($product_s->get_type() == 'variable') {
                     $product_s = new \WC_Product_Variable($productValue->ID);
                     $variations = $product_s->get_available_variations();
                     foreach ($variations as $variation) {
@@ -297,6 +300,7 @@ class WCVbout
                         }
                     }
                 }
+
                 $productData = array(
                     "productid"     => $productValue->ID,
                     "name"          => $productValue->post_title,
@@ -383,7 +387,7 @@ class WCVbout
                 $variationArray = array();
                 $product_s = wc_get_product($VARIATION->get_parent_id());
 
-                if ($product_s->product_type == 'variable') {
+                if ($product_s->get_type() == 'variable') {
                     $parentProductId = $VARIATION->get_parent_id();
                     $productid = $parentProductId;
 
@@ -462,7 +466,7 @@ class WCVbout
             $product_id = $parentProductId;
             $product_s = wc_get_product($parentProductId);
 
-            if ($product_s->product_type == 'variable') {
+            if ($product_s->get_type() == 'variable') {
                 $productid = $parentProductId;
 
                 $product_s = new \WC_Product_Variable($parentProductId);
@@ -568,7 +572,7 @@ class WCVbout
             }
 
             $variationArray = array();
-            if ($product_s->product_type == 'variable') {
+            if ($product_s->get_type() == 'variable') {
                 $product_s = new \WC_Product_Variable($post->ID);
                 $variations = $product_s->get_available_variations();
                 foreach ($variations as $variation) {
@@ -610,7 +614,7 @@ class WCVbout
             $product_s = wc_get_product($product->ID);
 
             $variationArray= array();
-            if ($product_s->product_type == 'variable') {
+            if ($product_s->get_type() == 'variable') {
                 $product_s = new \WC_Product_Variable($product->get_id());
                 $variations = $product_s->get_available_variations();
                 foreach ($variations as $variation) {
@@ -672,9 +676,9 @@ class WCVbout
         }
     }
     //Function product Search Query
-    public function wc_product_search()
+    public function wc_product_search($query)
     {
-        if(!empty(get_search_query())){
+        if ( !is_admin() && $query->is_main_query() ) {
             if($this->search == 1)
             {
                 $searchQuery    = get_search_query();
@@ -686,7 +690,7 @@ class WCVbout
                     'customer'  => $current_user->user_email,
                     'query'     => $searchQuery,
                     'ipaddress' => $ipAddress,
-                    "uniqueid"  => $this->sessionId,
+                    'uniqueid'  => $this->sessionId,
                 );
                 $this->vboutApp2->sendProductSearch($searchPayload);
             }
@@ -880,7 +884,7 @@ class WCVbout
                 $variationArray = array();
                 $product_s = wc_get_product($VARIATION->get_parent_id());
 
-                if ($product_s->product_type == 'variable') {
+                if ($product_s->get_type() == 'variable') {
                     $parentProductId = $VARIATION->get_parent_id();
                     $productid = $parentProductId;
 
