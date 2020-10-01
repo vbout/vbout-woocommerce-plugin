@@ -611,7 +611,7 @@ class WCVbout
         if ($this->product_visits == 1) {
             global $product;
             $current_user = wp_get_current_user();
-            $product_s = wc_get_product($product->ID);
+            $product_s = wc_get_product($product->get_id());
 
             $variationArray= array();
             if ($product_s->get_type() == 'variable') {
@@ -659,8 +659,8 @@ class WCVbout
     {
 
         if ($this->category_visits == 1) {
-
-            $queried_category = get_the_terms($post->ID, 'product_cat')[0];
+            global $product;
+            $queried_category = get_the_terms($product->get_id(), 'product_cat')[0];
             $current_user = wp_get_current_user();
 
             $category = array(
@@ -675,6 +675,7 @@ class WCVbout
             $result = $this->vboutApp2->Category($category, 1);
         }
     }
+
     //Function product Search Query
     public function wc_product_search($query)
     {
