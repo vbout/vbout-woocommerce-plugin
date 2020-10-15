@@ -66,7 +66,7 @@ class WCVbout
             add_action('woocommerce_after_main_content', array($this, 'wc_category_data'), 10);
             add_action('woocommerce_cart_item_removed', array($this, 'wc_item_remove'), 10, 2);
             add_action('pre_get_posts', array($this, 'wc_product_search'));
-            add_action('wp_login', array($this, 'wc_customer_update'), 99 );
+            add_action('wp_login', array($this, 'wc_customer_update'), 99, 2);
             add_action( 'woocommerce_process_product_meta', array($this, 'wc_product_add'), 12, 2 );
             add_action( 'woocommerce_before_checkout_process', array($this, 'wc_checkout_add'), 10);
 
@@ -225,26 +225,49 @@ class WCVbout
     // Sync All users
     private function syncCurrentCustomers()
     {
-        $users = get_users();
+        $users = get_users(['role__in' => 'customer']);
         if (count($users) > 0) {
             foreach ($users as $user) {
-                $first_name = '';
-                $last_name = '';
+                $userID = $user->data->ID;
 
-                $display_name = explode(" ",$user->data->display_name);
-                if (isset($display_name[0]))
-                    $first_name = $display_name[0];
-                if (isset($display_name[1]))
-                    $last_name = $display_name[1];
+                $first_name = get_user_meta($userID, 'first_name', true);
+                $last_name = get_user_meta($userID, 'last_name', true);
+                $email = $user->data->user_email;
+                $phone = get_user_meta($userID, 'billing_phone', true);
+                $company = get_user_meta($userID, 'billing_company', true);
+
+                $country_code = get_user_meta($userID, 'billing_country', true);
+                $country = $country_code ? WC()->countries->countries[$country_code] : '';
+
+                $state_code = get_user_meta($userID, 'billing_state', true);
+                if($country_code && $state_code) {
+                    $states = WC()->countries->get_states($country_code);
+                    $state = !empty($states[$state_code]) ? $states[$state_code] : $state_code;
+                } else {
+                    $state = $state_code;
+                }
+
+                $city = get_user_meta($userID, 'billing_city', true);
+                $postcode = get_user_meta($userID, 'billing_postcode', true);
+                $address_1 = get_user_meta($userID, 'billing_address_1', true);
+                $address_2 = get_user_meta($userID, 'billing_address_2', true);
 
                 $customer = array(
                     "firstname" => $first_name,
-                    "lastname"  => $last_name,
-                    "email"     => $user->data->user_email,
-                    'api_key'   => $this->apiKey,
-                    'domain'    => $this->domain,
+                    "lastname" => $last_name,
+                    "email" => $email,
+                    "phone" => $phone,
+                    "company" => $company,
+                    "country" => $country,
+                    "state" => $state,
+                    "city" => $city,
+                    "postcode" => $postcode,
+                    "address_1" => $address_1,
+                    "address_2" => $address_2,
+                    'api_key' => $this->apiKey,
+                    'domain' => $this->domain,
                 );
-                $result = $this->vboutApp2->Customer($customer,1);
+                $this->vboutApp2->Customer($customer, 1);
             }
         }
     }
@@ -499,44 +522,114 @@ class WCVbout
 
     /**
      * Creates a contact after a customer is created
+     * @param $user_id
      */
     public function onCustomerCreated($user_id)
     {
-        $customer = get_userdata( $user_id );
-        $last_name = $customer->data->last_name;
-        $first_name = $customer->first_name;
+        $customer = get_userdata($user_id);
+        $email = $customer->data->user_email;
 
-        $customer = array(
-            "firstname"     => $first_name,
-            "lastname"      => $last_name,
-            "email"         => $customer->data->user_email,
-            'api_key'       => $this->apiKey,
-            'domain'        => $this->domain,
-            'ipaddress'     => $_SERVER['REMOTE_ADDR'],
-            "uniqueid"      => $this->sessionId,
-        );
-        $result = $this->vboutApp2->Customer($customer,1);
-    }
-    //Update customer on Login
-    public function wc_customer_update()
-    {
-        if($this->customers == 1 )
-        {
-            $current_user = wp_get_current_user();
-
-            $customer = array(
-                "firstname"     => $current_user->user_firstname ,
-                "lastname"      => $current_user->user_lastname,
-                "email"         => $current_user->data->user_email,
-                'api_key'       => $this->apiKey,
-                'domain'        => $this->domain,
-                'ipaddress'     => $_SERVER['REMOTE_ADDR'],
-                "uniqueid"      => $this->sessionId,
-            );
-            $result = $this->vboutApp2->Customer($customer,1);
+        if (isset($_POST['billing_first_name']) || isset($_POST['billing_last_name'])) {
+            $first_name = isset($_POST['billing_first_name']) ? $_POST['billing_first_name'] : '';
+            $last_name = isset($_POST['billing_last_name']) ? $_POST['billing_last_name'] : '';
+        } else {
+            $first_name = isset($_POST['first_name']) ? $_POST['first_name'] : '';
+            $last_name = isset($_POST['last_name']) ? $_POST['last_name'] : '';
         }
 
+        $phone = isset($_POST['billing_phone']) ? $_POST['billing_phone'] : '';
+        $company = isset($_POST['billing_company']) ? $_POST['billing_company'] : '';
+
+        $country_code = isset($_POST['billing_country']) ? $_POST['billing_country'] : '';
+        $country = $country_code ? WC()->countries->countries[$country_code] : '';
+
+        $state_code = isset($_POST['billing_state']) ? $_POST['billing_state'] : '';
+        if ($country_code && $state_code) {
+            $states = WC()->countries->get_states($country_code);
+            $state = !empty($states[$state_code]) ? $states[$state_code] : $state_code;
+        } else {
+            $state = $state_code;
+        }
+
+        $city = isset($_POST['billing_city']) ? $_POST['billing_city'] : '';
+        $postcode = isset($_POST['billing_postcode']) ? $_POST['billing_postcode'] : '';
+        $address_1 = isset($_POST['billing_address_1']) ? $_POST['billing_address_1'] : '';
+        $address_2 = isset($_POST['billing_address_2']) ? $_POST['billing_address_2'] : '';
+
+        $customer = array(
+            "firstname" => $first_name,
+            "lastname" => $last_name,
+            "email" => $email,
+            "phone" => $phone,
+            "company" => $company,
+            "country" => $country,
+            "state" => $state,
+            "city" => $city,
+            "postcode" => $postcode,
+            "address_1" => $address_1,
+            "address_2" => $address_2,
+            'api_key' => $this->apiKey,
+            'domain' => $this->domain,
+            'ipaddress' => $_SERVER['REMOTE_ADDR'],
+            "uniqueid" => $this->sessionId,
+        );
+
+        $this->vboutApp2->Customer($customer, 1);
     }
+
+    /**
+     * Update customer on Login
+     * @param $user_login
+     * @param $user
+     */
+    public function wc_customer_update($user_login, $user)
+    {
+        if ($this->customers == 1) {
+            if (in_array('customer', $user->roles)) {
+                $userID = $user->data->ID;
+
+                $first_name = get_user_meta($userID, 'first_name', true);
+                $last_name = get_user_meta($userID, 'last_name', true);
+                $email = $user->data->user_email;
+                $phone = get_user_meta($userID, 'billing_phone', true);
+                $company = get_user_meta($userID, 'billing_company', true);
+
+                $country_code = get_user_meta($userID, 'billing_country', true);
+                $country = $country_code ? WC()->countries->countries[$country_code] : '';
+
+                $state_code = get_user_meta($userID, 'billing_state', true);
+                if ($country_code && $state_code) {
+                    $states = WC()->countries->get_states($country_code);
+                    $state = !empty($states[$state_code]) ? $states[$state_code] : $state_code;
+                } else {
+                    $state = $state_code;
+                }
+
+                $city = get_user_meta($userID, 'billing_city', true);
+                $postcode = get_user_meta($userID, 'billing_postcode', true);
+                $address_1 = get_user_meta($userID, 'billing_address_1', true);
+                $address_2 = get_user_meta($userID, 'billing_address_2', true);
+
+                $customer = array(
+                    "firstname" => $first_name,
+                    "lastname" => $last_name,
+                    "email" => $email,
+                    "phone" => $phone,
+                    "company" => $company,
+                    "country" => $country,
+                    "state" => $state,
+                    "city" => $city,
+                    "postcode" => $postcode,
+                    "address_1" => $address_1,
+                    "address_2" => $address_2,
+                    'api_key' => $this->apiKey,
+                    'domain' => $this->domain,
+                );
+                $this->vboutApp2->Customer($customer, 1);
+            }
+        }
+    }
+
     //On Logout update customer data
     public function onLogout()
     {
@@ -700,90 +793,95 @@ class WCVbout
 
     /**
      *Order handling
+     * @param $orderId
      */
     public function onOrderCompleted($orderId)
     {
         if ($this->abandoned_carts == 1) {
 
             $order = wc_get_order($orderId);
-            global $woocommerce;
-            $html = '';
-            $current_user = wp_get_current_user();
 
             //if Checkout add user guest
-            if($_SESSION['checkout_bool'])
-            {
+            if ($_SESSION['checkout_bool']) {
                 $customer = array(
-                    "firstname"     => $order->get_billing_first_name(),
-                    "lastname"      => $order->get_billing_last_name(),
-                    "email"         => $order->get_billing_email(),
-                    'api_key'       => $this->apiKey,
-                    'domain'        => $this->domain,
-                    'ipaddress'     => $_SERVER['REMOTE_ADDR'],
-                    "uniqueid"      => $this->sessionId,
+                    "firstname" => $order->get_billing_first_name(),
+                    "lastname" => $order->get_billing_last_name(),
+                    "email" => $order->get_billing_email(),
+                    "phone" => $order->get_billing_phone(),
+                    "company" => $order->get_billing_company(),
+                    "country" => $order->get_billing_country(),
+                    "state" => $order->get_billing_state(),
+                    "city" => $order->get_billing_city(),
+                    "postcode" => $order->get_billing_postcode(),
+                    "address_1" => $order->get_billing_address_1(),
+                    "address_2" => $order->get_billing_address_2(),
+                    'api_key' => $this->apiKey,
+                    'domain' => $this->domain,
+                    'ipaddress' => $_SERVER['REMOTE_ADDR'],
+                    "uniqueid" => $this->sessionId,
                 );
-                $result = $this->vboutApp2->Customer($customer,1);
+                $this->vboutApp2->Customer($customer, 1);
                 unset($_SESSION['checkout_bool']);
             }
 
             $order = array(
-                "cartid"            => $_SESSION['cartID'],
-                "uniqueid"          => $this->sessionId,
-                'ipaddress'         => $_SERVER['REMOTE_ADDR'],
-                "domain"            => $this->domain,
-                "orderid"           => $orderId,
-                "paymentmethod"     => $order->get_payment_method(),
-                "grandtotal"        => $order->get_total(),
-                "orderdate"         => strtotime($order->get_date_created()),
-                "shippingmethod"    => $order->get_shipping_method(),
-                "shippingcost"      => $order->get_shipping_total(),
-                "subtotal"          => $order->get_subtotal(),
-                "discountvalue"     => $order->get_total_discount(),
-                "taxcost"           => $order->get_tax_totals(),
-                "otherfeecost"      => $order->get_fees(),
-                "currency"          => $order->get_currency(),
-                "status"            => $order->get_status(),
-                "notes"             => $order->get_customer_note(),
-                "storename"         => $_SERVER['HTTP_HOST'],
-                "customerinfo"      => array(
-                    "firstname"         => $order->get_billing_first_name(),
-                    "lastname"          => $order->get_billing_last_name(),
-                    "email"             => $order->get_billing_email(),
-                    "phone"             => $order->get_billing_phone(),
-                    "company"           => $order->get_billing_company(),
+                "cartid" => $_SESSION['cartID'],
+                "uniqueid" => $this->sessionId,
+                'ipaddress' => $_SERVER['REMOTE_ADDR'],
+                "domain" => $this->domain,
+                "orderid" => $orderId,
+                "paymentmethod" => $order->get_payment_method(),
+                "grandtotal" => $order->get_total(),
+                "orderdate" => strtotime($order->get_date_created()),
+                "shippingmethod" => $order->get_shipping_method(),
+                "shippingcost" => $order->get_shipping_total(),
+                "subtotal" => $order->get_subtotal(),
+                "discountvalue" => $order->get_total_discount(),
+                "taxcost" => $order->get_tax_totals(),
+                "otherfeecost" => $order->get_fees(),
+                "currency" => $order->get_currency(),
+                "status" => $order->get_status(),
+                "notes" => $order->get_customer_note(),
+                "storename" => $_SERVER['HTTP_HOST'],
+                "customerinfo" => array(
+                    "firstname" => $order->get_billing_first_name(),
+                    "lastname" => $order->get_billing_last_name(),
+                    "email" => $order->get_billing_email(),
+                    "phone" => $order->get_billing_phone(),
+                    "company" => $order->get_billing_company(),
                 ),
-                "billinginfo"       => array(
-                    "firstname"         => $order->get_billing_first_name(),
-                    "lastname"          => $order->get_billing_last_name(),
-                    "email"             => $order->get_billing_email(),
-                    "phone"             => $order->get_billing_phone(),
-                    "company"           => $order->get_billing_company(),
-                    "address"           => $order->get_billing_address_1(),
-                    "address2"          => $order->get_billing_address_2(),
-                    "city"              => $order->get_billing_city(),
-                    "statename"         => $order->get_billing_state(),
-                    "countryname"       => $order->get_billing_country(),
-                    "zipcode"           => $order->get_billing_postcode(),
+                "billinginfo" => array(
+                    "firstname" => $order->get_billing_first_name(),
+                    "lastname" => $order->get_billing_last_name(),
+                    "email" => $order->get_billing_email(),
+                    "phone" => $order->get_billing_phone(),
+                    "company" => $order->get_billing_company(),
+                    "address" => $order->get_billing_address_1(),
+                    "address2" => $order->get_billing_address_2(),
+                    "city" => $order->get_billing_city(),
+                    "statename" => $order->get_billing_state(),
+                    "countryname" => $order->get_billing_country(),
+                    "zipcode" => $order->get_billing_postcode(),
                 ),
-                "shippinginfo"      => array(
-                    "firstname"         => $order->get_shipping_first_name(),
-                    "lastname"          => $order->get_shipping_last_name(),
-                    "email"             => $order->shipping_email,
-                    "phone"             => $order->shipping_phone,
-                    "company"           => $order->shipping_company,
-                    "address"           => $order->shipping_address_1,
-                    "address2"          => $order->shipping_address_2,
-                    "city"              => $order->shipping_city,
-                    "statename"         => $order->shipping_state,
-                    "countryname"       => $order->shipping_country,
-                    "zipcode"           => $order->shipping_postcode,
+                "shippinginfo" => array(
+                    "firstname" => $order->get_shipping_first_name(),
+                    "lastname" => $order->get_shipping_last_name(),
+                    "email" => $order->shipping_email,
+                    "phone" => $order->shipping_phone,
+                    "company" => $order->shipping_company,
+                    "address" => $order->shipping_address_1,
+                    "address2" => $order->shipping_address_2,
+                    "city" => $order->shipping_city,
+                    "statename" => $order->shipping_state,
+                    "countryname" => $order->shipping_country,
+                    "zipcode" => $order->shipping_postcode,
                 )
             );
             unset($_SESSION['cartID']);
-            $result = $this->vboutApp2->Order($order, 1);
+            $this->vboutApp2->Order($order, 1);
         }
-
     }
+
     //Order update with status ( From admin side)
     public function wc_order_update( $order )
     {
