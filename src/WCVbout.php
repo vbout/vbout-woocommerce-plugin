@@ -77,6 +77,9 @@ class WCVbout
             // Register integrations
             add_filter('woocommerce_integrations', array($this, 'addIntegration'));
 
+            add_action('sync_current_customers', array($this, 'syncCurrentCustomers'));
+            add_action('sync_current_products', array($this, 'syncCurrentProducts'));
+
             $this->loadConfig();
             session_start();
             // Load email marketing object
@@ -170,38 +173,39 @@ class WCVbout
         if ($_GET['tab'] === 'integration') {
             $this->loadConfig();
 
-            if($this->domain != '')
-            {
+            if($this->domain != '') {
                 $vboutApp = new EcommerceWS(array('api_key' => $this->apiKey));
 
                 $settingsPayload = array(
-                    'domain'  => $this->domain,
+                    'domain' => $this->domain,
                     'apiname' => 'WooCommerce',
-                    'apikey'  => $this->apiKey,
+                    'apikey' => $this->apiKey,
                 );
-                $vboutApp->sendAPIIntegrationCreation($settingsPayload,1);
+                $vboutApp->sendAPIIntegrationCreation($settingsPayload, 1);
 
                 $settings = array(
-                    'abandoned_carts'       => $this->abandoned_carts,
+                    'abandoned_carts' => $this->abandoned_carts,
                     'sync_current_products' => $this->sync_current_products,
-                    'search'                => $this->search,
-                    'product_visits'        => $this->product_visits,
-                    'category_visits'       => $this->category_visits,
-                    'customers'             => $this->customers,
-                    'product_feed'          => $this->product_feed,
-                    'current_customers'     => $this->current_customers,
-                    'marketing'             => $this->marketing,
-                    'domain'                => $this->domain,
-                    'apiName'               => 'WooCommerce',
+                    'search' => $this->search,
+                    'product_visits' => $this->product_visits,
+                    'category_visits' => $this->category_visits,
+                    'customers' => $this->customers,
+                    'product_feed' => $this->product_feed,
+                    'current_customers' => $this->current_customers,
+                    'marketing' => $this->marketing,
+                    'domain' => $this->domain,
+                    'apiName' => 'WooCommerce',
                 );
                 $vboutApp->sendSettingsSync($settings);
-                if($this->sync_current_products == 1)
-                {
-                    $this->syncCurrentProducts();
+
+                if ($this->sync_current_products == 1) {
+                    // schedule customers sync after saving settings
+                    wp_schedule_single_event(time(), 'sync_current_products');
                 }
-                if($this->current_customers == 1)
-                {
-                    $this->syncCurrentCustomers();
+
+                if ($this->current_customers == 1) {
+                    // schedule customers sync after saving settings
+                    wp_schedule_single_event(time(), 'sync_current_customers');
                 }
             }
             echo "<script type='text/javascript'>window.location = document.location.href + '&saved=1';</script>";
@@ -222,8 +226,11 @@ class WCVbout
             $sessionId = $_COOKIE['vbtEcommerceUniqueId'];
         return $sessionId;
     }
-    // Sync All users
-    private function syncCurrentCustomers()
+
+    /**
+     * Sync All users
+     */
+    public function syncCurrentCustomers()
     {
         $users = get_users(['role__in' => 'customer']);
         if (count($users) > 0) {
@@ -271,8 +278,11 @@ class WCVbout
             }
         }
     }
-    // Sync All Products
-    private function syncCurrentProducts()
+
+    /**
+     * Sync All Products
+     */
+    public function syncCurrentProducts()
     {
 
         $args = array(
@@ -349,6 +359,7 @@ class WCVbout
         wp_reset_postdata();
 
     }
+
     // Uninstalling the Plugin ( Deletion )
     public function uninstall()
     {
