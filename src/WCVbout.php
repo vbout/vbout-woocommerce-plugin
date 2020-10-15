@@ -132,16 +132,16 @@ class WCVbout
         if ( isset($WCSettings['product_visits']) && $WCSettings['product_visits'] == 'yes')
             $this->product_visits = 1;
 
-        if ( isset($WCSettings['product_visits']) && $WCSettings['category_visits'] == 'yes')
+        if ( isset($WCSettings['category_visits']) && $WCSettings['category_visits'] == 'yes')
             $this->category_visits = 1;
 
-        if ( isset($WCSettings['product_visits']) && $WCSettings['customers'] == 'yes')
+        if ( isset($WCSettings['customers']) && $WCSettings['customers'] == 'yes')
             $this->customers = 1;
 
-        if ( isset($WCSettings['product_visits']) && $WCSettings['product_feed'] == 'yes')
+        if ( isset($WCSettings['product_feed']) && $WCSettings['product_feed'] == 'yes')
             $this->product_feed = 1;
 
-        if ( isset($WCSettings['product_visits']) && $WCSettings['current_customers'] == 'yes')
+        if ( isset($WCSettings['current_customers']) && $WCSettings['current_customers'] == 'yes')
             $this->current_customers = 1;
 
         if ( isset($WCSettings['sync_current_products']) && $WCSettings['sync_current_products'] == 'yes')
