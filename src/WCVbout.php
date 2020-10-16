@@ -385,11 +385,9 @@ class WCVbout
     //Get Cart Data with Cart Item
     public function wc_cart_data()
     {
-
         if ($this->abandoned_carts == 1) {
-
             global $woocommerce;
-            $items = $woocommerce->cart->get_cart();
+            $products = $woocommerce->cart->get_cart();
 
             $current_user = wp_get_current_user();
             if (isset($_SESSION['cartID']))
@@ -399,88 +397,81 @@ class WCVbout
                 $_SESSION['cartID'] = $this->cartID;
             }
             $store = array(
-                "domain"        => $this->domain,
-                "cartcurrency"  => get_woocommerce_currency(),
-                "cartid"        => $this->cartID,
-                'ipaddress'     => $_SERVER['REMOTE_ADDR'],
-                "customer"      => $current_user->user_email,
-                "storename"     => $_SERVER['HTTP_HOST'],
-                "abandonurl"    => $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'],
-                "uniqueid"      => $this->sessionId,
+                "domain" => $this->domain,
+                "cartcurrency" => get_woocommerce_currency(),
+                "cartid" => $this->cartID,
+                'ipaddress' => $_SERVER['REMOTE_ADDR'],
+                "customer" => $current_user->user_email,
+                "storename" => $_SERVER['HTTP_HOST'],
+                "abandonurl" => $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'],
+                "uniqueid" => $this->sessionId,
             );
+            $this->vboutApp2->Cart($store, 1);
 
-            $result = $this->vboutApp2->Cart($store, 1);
-            foreach ($items as $item) {
+            // Get Cart Items
+            foreach ($products as $product) {
+                $productID = $product['product_id'];
+                $productObj = new WC_Product($productID);
+                $productName = $productObj->get_name();
+                $productPrice = $productObj->get_price();
+                $productDescription = $productObj->get_description();
+                $productSku = $productObj->get_sku();
+                $productDiscountPrice = ($productObj->get_sale_price()) ? $productObj->get_sale_price() : '0.0';
+                $productQuantity = $product['quantity'];
 
-                $product = $item['data'];
+                $variationID = $product['variation_id'];
 
-                //Category
-                $categoryId = 'N/A';
-                $categoryName = 'N/A';
-                $VARIATION = wc_get_product($product->get_id());
-                $variationArray = array();
-                $product_s = wc_get_product($VARIATION->get_parent_id());
+                $categoryID = '';
+                $categoryName = '';
+                $image = '';
 
-                if ($product_s->get_type() == 'variable') {
-                    $parentProductId = $VARIATION->get_parent_id();
-                    $productid = $parentProductId;
-
-                    $product_s = new \WC_Product_Variable($parentProductId);
-                    $variations = $product_s->get_available_variations();
-                    // Get variations
-                    foreach ($variations as $variation) {
-                        if ($variation['variation_id'] == $product->get_id()) {
-                            $titleKeys = array_keys($variation['attributes']);
-                            foreach ($titleKeys as $titleKey) {
-                                if (isset($variation['attributes'][$titleKey])) {
-                                    $title = explode('attribute_pa_', $titleKey);
-                                    if($title != '' || $variation['attributes'][$titleKey] != '' )
-                                        $variationArray[$title[1]] = $variation['attributes'][$titleKey];
-                                }
+                $productsVariations = array();
+                if ($variationID != 0) {
+                    $variationObj = wc_get_product($variationID);
+                    if ($variationObj) {
+                        $productAttributes = $productObj->get_attributes();
+                        if ($productAttributes) {
+                            foreach ($productAttributes as $key => $productAttribute) {
+                                $productsVariations[$productAttribute->get_name()] = $variationObj->get_attribute($key);
                             }
                         }
+                        $imageID = $variationObj->get_image_id();
+                        $image = wp_get_attachment_image_url($imageID, 'full');
                     }
-                    // Get image
-                    if (get_the_post_thumbnail_url($product->get_id(), 'full') == '')
-                        $image = get_the_post_thumbnail_url($parentProductId, 'full');
-                    else $image = get_the_post_thumbnail_url($product->get_id(), 'full');
-                    $terms = get_the_terms($parentProductId, 'product_cat');
-                } else {
-                    $productid = $product->get_id();
-                    $image = get_the_post_thumbnail_url($product->get_id(), 'full');
-                    $terms = get_the_terms($product->get_id(), 'product_cat');
                 }
-                if (count($terms) > 0) {
-                    $categoryId = $terms[0]->term_id;
-                    $categoryName = $terms[0]->name;
+                else {
+                    $image = get_the_post_thumbnail_url($productID, 'full');
                 }
-                if ($product->get_sale_price() == 0)
-                    $discountPrice = '0.0';
-                else $discountPrice = $product->get_sale_price();
+
+                $category = get_the_terms($productID, 'product_cat');
+                if (is_array($category)) {
+                    $categoryID = $category[0]->term_id;
+                    $categoryName = $category[0]->name;
+                }
 
                 $productData = array(
-                    "domain"        => $this->domain,
-                    "cartid"        => $this->cartID,
-                    "productid"     => (string)$productid,
-                    "name"          => $product->get_name(),
-                    "price"         => $product->get_price(),
-                    "description"   => $product->get_description(),
-                    "discountprice" => $discountPrice,
-                    "currency"      => get_woocommerce_currency(),
-                    "quantity"      => (string)$item['quantity'],
-                    "categoryid"    => $categoryId,
-                    "variation"     => $variationArray,
-                    "category"      => $categoryName,
-                    "sku"           => $product->get_sku(),
-                    "link"          => get_permalink($product->get_id()),
-                    "image"         => $image,
-                    "uniqueid"      => $this->sessionId,
+                    "domain" => $this->domain,
+                    "cartid" => $this->cartID,
+                    "productid" => (string)$productID,
+                    "name" => $productName,
+                    "price" => $productPrice,
+                    "description" => $productDescription,
+                    "discountprice" => $productDiscountPrice,
+                    "currency" => get_woocommerce_currency(),
+                    "quantity" => (string)$productQuantity,
+                    "categoryid" => $categoryID,
+                    "variation" => $productsVariations,
+                    "category" => $categoryName,
+                    "sku" => $productSku,
+                    "link" => get_permalink($productID),
+                    "image" => $image,
+                    "uniqueid" => $this->sessionId,
                 );
-                $result = $this->vboutApp2->CartItem($productData, 1);
+                $this->vboutApp2->CartItem($productData, 1);
             }
         }
-
     }
+
     //Function Remove cart
     public function wc_item_remove($removed_cart_item_key, $cart) {
 
