@@ -429,17 +429,11 @@ class WCVbout
                 if ($variationID != 0) {
                     $variationObj = wc_get_product($variationID);
                     if ($variationObj) {
-                        $productAttributes = $productObj->get_attributes();
-                        if ($productAttributes) {
-                            foreach ($productAttributes as $key => $productAttribute) {
-                                $productsVariations[$productAttribute->get_name()] = $variationObj->get_attribute($key);
-                            }
-                        }
+                        $productsVariations = $variationObj->get_attributes();
                         $imageID = $variationObj->get_image_id();
                         $image = wp_get_attachment_image_url($imageID, 'full');
                     }
-                }
-                else {
+                } else {
                     $image = get_the_post_thumbnail_url($productID, 'full');
                 }
 
@@ -473,53 +467,26 @@ class WCVbout
     }
 
     //Function Remove cart
-    public function wc_item_remove($removed_cart_item_key, $cart) {
+    public function wc_item_remove($removed_cart_item_key, $cart)
+    {
+        $productVariations = array();
+        $productID = $cart->removed_cart_contents[$removed_cart_item_key]['product_id'];
+        $variationID = $cart->removed_cart_contents[$removed_cart_item_key]['variation_id'];
 
-        $boolVariation = false;
-        $variationArray = array();
-
-        if( $cart->removed_cart_contents[ $removed_cart_item_key ]['variation_id'] != 0)
-        {
-            $variation_id =  $cart->removed_cart_contents[ $removed_cart_item_key ]['variation_id'];
-            $boolVariation = true;
-            $parentProductId = $cart->removed_cart_contents[ $removed_cart_item_key ]['product_id'];
-        }
-
-        else $product_id = $cart->removed_cart_contents[ $removed_cart_item_key ]['product_id'];
-
-        if($boolVariation) {
-            $product_id = $parentProductId;
-            $product_s = wc_get_product($parentProductId);
-
-            if ($product_s->get_type() == 'variable') {
-                $productid = $parentProductId;
-
-                $product_s = new \WC_Product_Variable($parentProductId);
-                $variations = $product_s->get_available_variations();
-                // Get variations
-                foreach ($variations as $variation) {
-                    if ($variation['variation_id'] == $variation_id) {
-                        $titleKeys = array_keys($variation['attributes']);
-                        foreach ($titleKeys as $titleKey) {
-                            if (isset($variation['attributes'][$titleKey])) {
-                                $title = explode('attribute_pa_', $titleKey);
-                                if ($title != '' || $variation['attributes'][$titleKey] != '')
-                                    $variationArray[$title[1]] = $variation['attributes'][$titleKey];
-                            }
-                        }
-                    }
-                }
+        if ($variationID != 0) {
+            $variationObj = wc_get_product($variationID);
+            if ($variationObj) {
+                $productVariations = $variationObj->get_attributes();
             }
         }
 
         $item = array(
-            "cartid"    => $_SESSION['cartID'],
-            "domain"    => $this->domain,
-            "productid" => $product_id,
-            "variation" => $variationArray,
+            "cartid" => $_SESSION['cartID'],
+            "domain" => $this->domain,
+            "productid" => $productID,
+            "variation" => $productVariations,
         );
-        $result = $this->vboutApp2->CartItem($item,3);
-
+        $this->vboutApp2->CartItem($item, 3);
     }
 
     /**
