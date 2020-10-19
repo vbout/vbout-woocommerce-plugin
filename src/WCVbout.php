@@ -170,8 +170,8 @@ class WCVbout
         if ( isset($WCSettings['search']) && $WCSettings['search'] == 'yes')
             $this->search = 1;
 
-        $this->apiKey                   = $WCSettings['apiKey'];
-        $this->domain                   = $WCSettings['domain'];
+        $this->apiKey = isset($WCSettings['apiKey']) ? $WCSettings['apiKey'] : null;
+        $this->domain = isset($WCSettings['domain']) ? $WCSettings['domain'] : null;
         $this->sessionId                = $this->wc_unique_id();
     }
 
@@ -751,8 +751,9 @@ class WCVbout
      */
     public function wc_product_search($query)
     {
+        if ($this->search == 1) {
         if ( !is_admin() && $query->is_main_query() ) {
-            if ($this->search == 1) {
+                if ($query->is_search) {
                 $searchQuery    = get_search_query();
                 $current_user   = wp_get_current_user();
                 $ipAddress      = $_SERVER['REMOTE_ADDR'];
@@ -767,6 +768,7 @@ class WCVbout
                 $this->vboutApp2->sendProductSearch($searchPayload);
             }
         }
+    }
     }
 
     /**

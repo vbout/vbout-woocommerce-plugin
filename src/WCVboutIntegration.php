@@ -10,22 +10,16 @@ class WCVboutIntegration extends \WC_Integration
     private $wcFields = array('first_name', 'last_name', 'country', 'state', 'phone');
 
     /**
-     * Constructor
+     * WCVboutIntegration constructor.
      */
     public function __construct()
     {
-        global $woocommerce;
-
         $this->id = 'vbout-integration';
-        // $this->method_title = __('Set up integration with Vbout', 'woocommerce-vbout-integration');
         $this->method_description = __('WooCommerce Vbout Integration Settings', 'woocommerce-vbout-integration');
 
         // Load the settings.
         $this->init_form_fields();
         $this->init_settings();
-
-        // Define user set variables.
-        // $this->apiKey = $this->get_option('apiKey');
 
         // Actions.
         add_action('woocommerce_update_options_integration_' .  $this->id, array($this, 'process_admin_options'));
@@ -55,7 +49,7 @@ class WCVboutIntegration extends \WC_Integration
 
         if ($this->get_option('apiKey') !== '') {
              $domain  = $this->getDomainVBT($this->get_option('apiKey'));
-            if ($domain !=='') {
+            if ($domain) {
                  $fields['listTitle'] = array(
                     'title' => __('WOOCOMMERCE LISTS', 'woocommerce-vbout-integration'),
                     'type' => 'text',
@@ -86,8 +80,7 @@ class WCVboutIntegration extends \WC_Integration
                             'description' => '',
                             'desc_tip' => false,
                             'default' => 'no',
-                            'custom_attributes' => array(// 'required' => true
-                            )
+                            'custom_attributes' => array()
                         );
                     }
                 }
@@ -98,8 +91,8 @@ class WCVboutIntegration extends \WC_Integration
 
     /**
      * Sanitize/transform setting values
-     * @param  Array $settings
-     * @return Array
+     * @param $settings
+     * @return mixed
      */
     public function sanitize_settings($settings)
     {
@@ -112,9 +105,9 @@ class WCVboutIntegration extends \WC_Integration
     }
 
     /**
-     * Get email marketing lists from Vbout
-     * @param  String $apiKey
-     * @return Array
+     * Get domain code from VBOUT
+     * @param $apiKey
+     * @return array
      */
 
 
@@ -126,13 +119,18 @@ class WCVboutIntegration extends \WC_Integration
         $url = array(
             'domain' => parse_url($url)['path']
         );
-        $domainVBT = $vboutApp->getDomain($url);
-         return $domainVBT;
+        $domainCode = $vboutApp->getDomain($url);
+        $domainCode = is_array($domainCode) ? null : $domainCode;
+        return $domainCode;
     }
-    //Added new Settings functionality
+
+    /**
+     * Added new Settings functionality
+     * @return string[]
+     */
     private function getSettingsMapField()
     {
-        $Vboutfields  = array(
+        return array(
             'abandoned_carts'       =>  'Abandoned carts (When a checkout/order is created or updated on  WooCommerce) ',
             'search'                =>  'Product Search (When customers search for a specific product on WooCommerce)',
             'product_visits'        =>  'Product Visits (When customers visit a product on WooCommerce)',
@@ -141,10 +139,7 @@ class WCVboutIntegration extends \WC_Integration
             'current_customers'     =>  'Existing Customers (Syncs customers\' data before installing the plugin on WooCommerce)',
             'product_feed'          =>  'Product data (When products are added or updated on WooCommerce)',
             'sync_current_products' =>  'Existing products (Syncs products data before installing the plugin on WooCommerce)',
-//            'marketing'             =>  'Marketing ',
         );
-        return $Vboutfields;
-
     }
 
 }

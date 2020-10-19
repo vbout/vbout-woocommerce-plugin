@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Plugin Name: Vbout Woocommerce Plugin
- * Plugin URI: http://woocommerce.com/products/woocommerce-extension/
- * Description: A Woocommerce extension to integrate with Vbout.
- * Version: 2.0.0
- * Author: Vbout Inc.
+ * Plugin Name: VBOUT Woocommerce Plugin
+ * Plugin URI: https://vbout.com
+ * Description: A Woocommerce extension to integrate with VBOUT.
+ * Version: 3.0.0
+ * Author: VBOUT Inc.
  * Author URI: https://vbout.com
- * Developer: Mohamad Ghannoum
+ * Developer: VBOUT Dev Team
  * Developer URI: https://vbout.com
- * Text Domain: vbout
+ * Text Domain: VBOUT
  * Domain Path: /languages
  *
- * Copyright: © 2009-2015 WooCommerce.
+ * Copyright: © VBOUT.
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  */
