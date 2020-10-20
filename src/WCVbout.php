@@ -136,13 +136,18 @@ class WCVbout
 
     /**
      * configuration handling
+     * @param bool $deleteRequest
+     * @throws \Exception
      */
-    private function loadConfig()
+    private function loadConfig($deleteRequest = false)
     {
         $WCSettings = get_option('woocommerce_' . $this->integrationId . '_settings');
 
         if (!$WCSettings) {
-            throw new \Exception('Incomplete settings', 1);
+            if ($deleteRequest)
+                return;
+            else
+                throw new \Exception('Incomplete settings', 1);
         }
 
         //New Settings
@@ -371,18 +376,18 @@ class WCVbout
     public function uninstall()
     {
         // Load configurations
-        $this->loadConfig();
+        $this->loadConfig(true);
         $vboutApp = new EcommerceWS(array('api_key' => $this->apiKey));
-        if($this->domain != '') {
+        if ($this->domain != '') {
             $settingsPayload = array(
                 'domain' => $this->domain,
                 'apiname' => 'WooCommerce',
                 'api_key' => $this->apiKey,
             );
-            $result = $vboutApp->sendAPIIntegrationCreation($settingsPayload, 3);
+            $vboutApp->sendAPIIntegrationCreation($settingsPayload, 3);
         }
         delete_option('woocommerce_' . $this->integrationId . '_settings');
-
+        delete_transient('vbout_update_' . vbout_woocommerce_slug);
     }
 
 
