@@ -34,7 +34,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 
     define('vbout_woocommerce_current_version', '3.0');
     define('vbout_woocommerce_slug', 'vbout-woocommerce-integration');
-    define('vbout_woocommerce_updater', 'http://wordpress.vbout.com/integrations/vbout_woocommerce_plugin.json');
+    define('vbout_woocommerce_updater', 'https://app-stg.vbout.com/integrations/vbout_woocommerce_plugin.json');
 
     add_filter('plugins_api', 'vbout_woocommerce_plugin_info', 20, 3);
     /**
