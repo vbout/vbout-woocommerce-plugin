@@ -3,7 +3,7 @@
 /**
  * Plugin Name: VBOUT Woocommerce Plugin
  * Plugin URI: https://vbout.com
- * Description: A Woocommerce extension to integrate with VBOUT.
+ * Description: A woocommerce extension to integrate with VBOUT.
  * Version: 3.1
  * Author: VBOUT Inc.
  * Author URI: https://vbout.com
@@ -122,7 +122,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
             if ($remote && version_compare(vbout_woocommerce_current_version, $remote->version, '<') && version_compare($remote->requires, get_bloginfo('version'), '<')) {
                 $res = new stdClass();
                 $res->slug = vbout_woocommerce_slug;
-                $res->plugin = 'vbout-woocommerce-plugin-' . vbout_woocommerce_current_version . '/vbout.php';
+                $res->plugin = 'vbout-woocommerce-plugin/vbout.php';
                 $res->new_version = $remote->version;
                 $res->tested = $remote->tested;
                 $res->package = $remote->download_url;
@@ -142,8 +142,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
         if ($options['action'] == 'update' && $options['type'] === 'plugin') {
             $plugins = $options['plugins'];
             foreach ($plugins as $plugin) {
-                $vboutWoocommercePluginName = 'vbout-woocommerce-plugin-' . vbout_woocommerce_current_version . '/vbout.php';
-                if ($plugin == $vboutWoocommercePluginName) {
+                if ($plugin == 'vbout-woocommerce-plugin/vbout.php') {
                     // just clean the cache when new plugin version is installed
                     delete_transient('vbout_update_' . vbout_woocommerce_slug);
                 }
