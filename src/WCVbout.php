@@ -59,7 +59,11 @@ class WCVbout
             add_action('woocommerce_created_customer', array($this, 'onCustomerCreated'), 10, 2);
             add_action( 'user_register', array($this, 'onCustomerCreated'),10 ,1);
 
+            // Default Woocommerce Case
             add_action('woocommerce_after_cart_contents',  array($this, 'wc_cart_data'));
+            // WooFunnel Case
+            add_action('woocommerce_review_order_after_cart_contents',  array($this, 'wc_cart_data'));
+
             add_action('woocommerce_thankyou', array($this, 'onOrderCompleted'), 10, 1);
             add_action('clear_auth_cookie', array($this, 'onLogout'));
             add_action('woocommerce_settings_saved', array($this, 'onSettingsSaved'));
@@ -245,7 +249,7 @@ class WCVbout
     public function onSettingsNotified()
     {
         if (isset($_GET['saved']) && $_GET['saved']) {
-            echo '<div class="updated fade"><p>' . sprintf(__('%sVbout settings saved.%s If settings do not appear below, check your API key and try again. Don\'t have an account? Please click %shere%s.', 'woocommerce-vbout-integration'), '<strong>', '</strong>', '<a href="https://www.vbout.com/register/">', '</a>' ) . '</p></div>' . "\n";
+            echo '<div class="updated fade"><p>' . sprintf(__('%sVbout settings saved.%s If settings do not appear below, check your API key and try again. Don\'t have an account? Please click %shere%s.', 'woocommerce-vbout-integration'), '<strong>', '</strong>', '<a href="https://www.vbout.com/pricing/">', '</a>' ) . '</p></div>' . "\n";
         }
     }
 

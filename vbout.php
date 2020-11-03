@@ -46,7 +46,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
      */
     function vbout_woocommerce_plugin_info($res, $action, $args)
     {
-        // do nothing if this is not about getting plugin information
+        // Do nothing if this is not about getting plugin information
         if ('plugin_information' !== $action) {
             return false;
         }
@@ -58,7 +58,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 
         // trying to get from cache first
         if (false == $remote = get_transient('vbout_update_' . vbout_woocommerce_slug)) {
-            // vbout_woocommerce_plugin.json is the file with the actual plugin information on your server
+            // vbout_woocommerce_plugin.json is the file with the latest plugin information on VBOUT APP server
             $remote = wp_remote_get(vbout_woocommerce_updater, array(
                     'timeout' => 10,
                     'headers' => array(
@@ -118,7 +118,6 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 
         if ($remote) {
             $remote = json_decode($remote['body']);
-            // your installed plugin version should be on the line below! You can obtain it dynamically of course
             if ($remote && version_compare(vbout_woocommerce_current_version, $remote->version, '<') && version_compare($remote->requires, get_bloginfo('version'), '<')) {
                 $res = new stdClass();
                 $res->slug = vbout_woocommerce_slug;
@@ -143,7 +142,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
             $plugins = $options['plugins'];
             foreach ($plugins as $plugin) {
                 if ($plugin == 'vbout-woocommerce-plugin/vbout.php') {
-                    // just clean the cache when new plugin version is installed
+                    // Clean the cache when new plugin version is installed
                     delete_transient('vbout_update_' . vbout_woocommerce_slug);
                 }
             }
