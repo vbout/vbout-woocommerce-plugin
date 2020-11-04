@@ -419,7 +419,7 @@ class WCVbout
                 "domain" => $this->domain,
                 "cartcurrency" => get_woocommerce_currency(),
                 "cartid" => $this->cartID,
-                'ipaddress' => $_SERVER['REMOTE_ADDR'],
+                'ipaddress' => $this->getClientIPAddress(),
                 "customer" => $current_user->user_email,
                 "storename" => $_SERVER['HTTP_HOST'],
                 "abandonurl" => $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'],
@@ -576,7 +576,7 @@ class WCVbout
             "address_2" => $address_2,
             'api_key' => $this->apiKey,
             'domain' => $this->domain,
-            'ipaddress' => $_SERVER['REMOTE_ADDR'],
+            'ipaddress' => $this->getClientIPAddress(),
             "uniqueid" => $this->sessionId,
         );
 
@@ -718,7 +718,7 @@ class WCVbout
                 "discountprice" => $productDiscountPrice,
                 "currency"      => get_woocommerce_currency(),
                 "sku" => $productSku,
-                'ipaddress'     =>$_SERVER['REMOTE_ADDR'],
+                'ipaddress'     =>$this->getClientIPAddress(),
                 "categoryid" => $productCategoryID,
                 "category" => $productCategoryName,
                 "link" => get_permalink($productID),
@@ -747,7 +747,7 @@ class WCVbout
                 "categoryid"    => $queried_category->term_id,
                 "name"          => $queried_category->name,
                 "link"          => get_category_link($queried_category->term_id),
-                'ipaddress'     =>$_SERVER['REMOTE_ADDR'],
+                'ipaddress'     =>$this->getClientIPAddress(),
                 "uniqueid"      => $this->sessionId,
             );
             $result = $this->vboutApp2->Category($category, 1);
@@ -765,7 +765,7 @@ class WCVbout
                 if ($query->is_search) {
                 $searchQuery    = get_search_query();
                 $current_user   = wp_get_current_user();
-                $ipAddress      = $_SERVER['REMOTE_ADDR'];
+                $ipAddress      = $this->getClientIPAddress();
 
                 $searchPayload = array(
                     'domain'    => $this->domain,
@@ -806,7 +806,7 @@ class WCVbout
                     "address_2" => $order->get_billing_address_2(),
                     'api_key' => $this->apiKey,
                     'domain' => $this->domain,
-                    'ipaddress' => $_SERVER['REMOTE_ADDR'],
+                    'ipaddress' => $this->getClientIPAddress(),
                     "uniqueid" => $this->sessionId,
                 );
                 $this->vboutApp2->Customer($customer, 1);
@@ -816,7 +816,7 @@ class WCVbout
             $order = array(
                 "cartid" => $_SESSION['cartID'],
                 "uniqueid" => $this->sessionId,
-                'ipaddress' => $_SERVER['REMOTE_ADDR'],
+                'ipaddress' => $this->getClientIPAddress(),
                 "domain" => $this->domain,
                 "orderid" => $orderId,
                 "paymentmethod" => $order->get_payment_method(),
@@ -969,7 +969,7 @@ class WCVbout
                 "domain"        => $this->domain,
                 "cartcurrency"  => get_woocommerce_currency(),
                 "cartid"        => $this->cartID,
-                'ipaddress'     => $_SERVER['REMOTE_ADDR'],
+                'ipaddress'     => $this->getClientIPAddress(),
                 "customer"      => $current_user->user_email,
                 "storename"     => $_SERVER['HTTP_HOST'],
                 "abandonurl"    => $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'],
@@ -1040,5 +1040,24 @@ class WCVbout
                 $this->vboutApp2->CartItem($productData, 1);
             }
         }
+    }
+
+    /**
+     * Get Client IP
+     * @return mixed
+     */
+    private function getClientIPAddress()
+    {
+        // Whether IP is from shared internet
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } // Whether IP is from proxy
+        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } // Whether IP is from remote address
+        else {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+        return $ip;
     }
 }
