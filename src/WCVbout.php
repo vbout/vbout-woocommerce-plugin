@@ -13,13 +13,13 @@ use WC_Product;
 class WCVbout
 {
     private $integrationId;
-    private $domain  = '';
+    private $domain = '';
     private $apiKey;
     private $abandoned_carts = 0;
     private $product_visits = 0;
     private $category_visits = 0;
     private $customers = 0;
-    private $product_feed =0;
+    private $product_feed = 0;
     private $marketing = 0;
     private $current_customers = 0;
     private $sync_current_products = 0;
@@ -48,7 +48,7 @@ class WCVbout
         if (isset($_GET['tab']) && $_GET['tab'] === 'integration') {
             add_action('admin_enqueue_scripts', array($this, 'loadScripts'));
             add_action('admin_enqueue_scripts', array($this, 'loadStyles'));
-        }else{
+        } else {
             add_action('wp_enqueue_scripts', array($this, 'loadWPScript'));
 //            add_action( 'wp_ajax_updatevboutabandon', array( $this, 'onPostData' )  );
 //            add_action( 'wp_ajax_nopriv_updatevboutabandon', array( $this, 'onPostData' ) );
@@ -57,29 +57,33 @@ class WCVbout
         try {
             // Load action hooks
             add_action('woocommerce_created_customer', array($this, 'onCustomerCreated'), 10, 2);
-            add_action( 'user_register', array($this, 'onCustomerCreated'),10 ,1);
+            add_action('user_register', array($this, 'onCustomerCreated'), 10, 1);
 
             // Default Woocommerce Case
-            add_action('woocommerce_after_cart_contents',  array($this, 'wc_cart_data'));
+            add_action('woocommerce_after_cart_contents', array($this, 'wc_cart_data'));
             // WooFunnel Case
-            add_action('woocommerce_review_order_after_cart_contents',  array($this, 'wc_cart_data'));
+            add_action('woocommerce_review_order_after_cart_contents', array($this, 'wc_cart_data'));
 
             add_action('woocommerce_thankyou', array($this, 'onOrderCompleted'), 10, 1);
             add_action('clear_auth_cookie', array($this, 'onLogout'));
             add_action('woocommerce_settings_saved', array($this, 'onSettingsSaved'));
             add_action('admin_notices', array($this, 'onSettingsNotified'));
-            add_action('woocommerce_after_single_product',array($this, 'wc_product_data'), 10);
+            add_action('woocommerce_after_single_product', array($this, 'wc_product_data'), 10);
             add_action('woocommerce_after_main_content', array($this, 'wc_category_data'), 10);
             add_action('woocommerce_cart_item_removed', array($this, 'wc_item_remove'), 10, 2);
             add_action('pre_get_posts', array($this, 'wc_product_search'));
             add_action('wp_login', array($this, 'wc_customer_update'), 99, 2);
             add_action('woocommerce_process_product_meta', array($this, 'wc_product_add'), 12, 1);
-            add_action( 'woocommerce_before_checkout_process', array($this, 'wc_checkout_add'), 10);
+            // LearnPress: Sync new added course into VBOUT as product
+            if (class_exists('LearnPress')) {
+                add_action('save_post', array($this, 'lp_course_add'), 10, 3);
+            }
+            add_action('woocommerce_before_checkout_process', array($this, 'wc_checkout_add'), 10);
 
             // Add the tracker
 //            add_action('wp_head', 'add_tracker');
 
-            add_action( 'woocommerce_admin_order_data_after_order_details',  array($this,'wc_order_update'),10,1);
+            add_action('woocommerce_admin_order_data_after_order_details', array($this, 'wc_order_update'), 10, 1);
             // Register integrations
             add_filter('woocommerce_integrations', array($this, 'addIntegration'));
 
@@ -155,33 +159,33 @@ class WCVbout
         }
 
         //New Settings
-        if ( isset($WCSettings['abandoned_carts']) && $WCSettings['abandoned_carts'] == 'yes')
+        if (isset($WCSettings['abandoned_carts']) && $WCSettings['abandoned_carts'] == 'yes')
             $this->abandoned_carts = 1;
 
-        if ( isset($WCSettings['product_visits']) && $WCSettings['product_visits'] == 'yes')
+        if (isset($WCSettings['product_visits']) && $WCSettings['product_visits'] == 'yes')
             $this->product_visits = 1;
 
-        if ( isset($WCSettings['category_visits']) && $WCSettings['category_visits'] == 'yes')
+        if (isset($WCSettings['category_visits']) && $WCSettings['category_visits'] == 'yes')
             $this->category_visits = 1;
 
-        if ( isset($WCSettings['customers']) && $WCSettings['customers'] == 'yes')
+        if (isset($WCSettings['customers']) && $WCSettings['customers'] == 'yes')
             $this->customers = 1;
 
-        if ( isset($WCSettings['product_feed']) && $WCSettings['product_feed'] == 'yes')
+        if (isset($WCSettings['product_feed']) && $WCSettings['product_feed'] == 'yes')
             $this->product_feed = 1;
 
-        if ( isset($WCSettings['current_customers']) && $WCSettings['current_customers'] == 'yes')
+        if (isset($WCSettings['current_customers']) && $WCSettings['current_customers'] == 'yes')
             $this->current_customers = 1;
 
-        if ( isset($WCSettings['sync_current_products']) && $WCSettings['sync_current_products'] == 'yes')
+        if (isset($WCSettings['sync_current_products']) && $WCSettings['sync_current_products'] == 'yes')
             $this->sync_current_products = 1;
 
-        if ( isset($WCSettings['search']) && $WCSettings['search'] == 'yes')
+        if (isset($WCSettings['search']) && $WCSettings['search'] == 'yes')
             $this->search = 1;
 
         $this->apiKey = isset($WCSettings['apiKey']) ? $WCSettings['apiKey'] : null;
         $this->domain = isset($WCSettings['domain']) ? $WCSettings['domain'] : null;
-        $this->sessionId                = $this->wc_unique_id();
+        $this->sessionId = $this->wc_unique_id();
     }
 
     /**
@@ -204,7 +208,7 @@ class WCVbout
         if ($_GET['tab'] === 'integration') {
             $this->loadConfig();
 
-            if($this->domain != '') {
+            if ($this->domain != '') {
                 $vboutApp = new EcommerceWS(array('api_key' => $this->apiKey));
 
                 $settingsPayload = array(
@@ -249,7 +253,7 @@ class WCVbout
     public function onSettingsNotified()
     {
         if (isset($_GET['saved']) && $_GET['saved']) {
-            echo '<div class="updated fade"><p>' . sprintf(__('%sVbout settings saved.%s If settings do not appear below, check your API key and try again. Don\'t have an account? Please click %shere%s.', 'woocommerce-vbout-integration'), '<strong>', '</strong>', '<a href="https://www.vbout.com/pricing/">', '</a>' ) . '</p></div>' . "\n";
+            echo '<div class="updated fade"><p>' . sprintf(__('%sVbout settings saved.%s If settings do not appear below, check your API key and try again. Don\'t have an account? Please click %shere%s.', 'woocommerce-vbout-integration'), '<strong>', '</strong>', '<a href="https://www.vbout.com/pricing/">', '</a>') . '</p></div>' . "\n";
         }
     }
 
@@ -285,7 +289,7 @@ class WCVbout
                 $country = $country_code ? WC()->countries->countries[$country_code] : '';
 
                 $state_code = get_user_meta($userID, 'billing_state', true);
-                if($country_code && $state_code) {
+                if ($country_code && $state_code) {
                     $states = WC()->countries->get_states($country_code);
                     $state = !empty($states[$state_code]) ? $states[$state_code] : $state_code;
                 } else {
@@ -323,26 +327,28 @@ class WCVbout
     public function syncCurrentProducts()
     {
 
-        $args = array(
-            'post_type'      => 'product',
-            'post_status'    => 'publish',
+        $productFound = false;
+
+        $wooArgs = array(
+            'post_type' => 'product',
+            'post_status' => 'publish',
             'posts_per_page' => -1,
         );
 
-
-        $loop = new \WP_Query( $args );
-        if ( $loop->have_posts() ) {
+        # Woocommerce Product
+        $loop = new \WP_Query($wooArgs);
+        if ($loop->have_posts()) {
+            $productFound = true;
             foreach ($loop->posts as $productPost) {
+                $productID = $productPost->ID;
+                $productCategoryID = 'N/A';
+                $productCategoryName = 'N/A';
                 $product = wc_get_product($productPost->ID);
-                $productID = $product->get_id();
                 $productName = $product->get_name();
                 $productDescription = $product->get_description();
                 $productSku = $product->get_sku();
                 $productPrice = ($product->get_regular_price()) ? $product->get_regular_price() : (($product->get_price()) ? $product->get_price() : '0.0');
                 $productDiscountPrice = $product->get_sale_price() ? $product->get_sale_price() : '0.0';
-
-                $productCategoryID = 'N/A';
-                $productCategoryName = 'N/A';
                 $terms = get_the_terms($productID, 'product_cat');
                 if (count($terms) > 0) {
                     $productCategoryID = $terms[0]->term_id;
@@ -355,19 +361,67 @@ class WCVbout
                     "price" => $productPrice,
                     "description" => $productDescription,
                     "discountprice" => $productDiscountPrice,
-                    "currency"      => get_woocommerce_currency(),
+                    "currency" => get_woocommerce_currency(),
                     "sku" => $productSku,
                     "categoryid" => $productCategoryID,
                     "category" => $productCategoryName,
                     "link" => get_permalink($productID),
                     "image" => get_the_post_thumbnail_url($productID, 'full'),
-                    'api_key'       => $this->apiKey,
-                    'domain'        => $this->domain,
+                    'api_key' => $this->apiKey,
+                    'domain' => $this->domain,
                 );
                 $this->vboutApp2->Product($productData, 1);
             }
-        } else {
-            echo __( 'No products found' );
+        }
+
+        # LearnPress Courses
+        if (class_exists('LearnPress')) {
+            $LpArgs = array(
+                'post_type' => 'lp_course',
+                'post_status' => 'publish',
+                'posts_per_page' => -1,
+            );
+            $loop = new \WP_Query($LpArgs);
+            if ($loop->have_posts()) {
+                $productFound = true;
+                foreach ($loop->posts as $productPost) {
+                    $productID = $productPost->ID;
+                    $productName = $productPost->post_title;
+                    $productDescription = $productPost->post_content;
+                    $productSku = null;
+                    $productPrice = (get_post_meta($productID, '_lp_price', true)) ? get_post_meta($productID, '_lp_price', true) : '0.0';
+                    $productDiscountPrice = (get_post_meta($productID, '_lp_sale_price', true)) ? get_post_meta($productID, '_lp_sale_price', true) : '0.0';
+
+                    $productCategoryID = 'N/A';
+                    $productCategoryName = 'N/A';
+                    $terms = get_the_terms($productID, 'course_category');
+                    if (count($terms) > 0) {
+                        $productCategoryID = $terms[0]->term_id;
+                        $productCategoryName = $terms[0]->name;
+                    }
+
+                    $productData = array(
+                        "productid" => $productID,
+                        "name" => $productName,
+                        "price" => $productPrice,
+                        "description" => $productDescription,
+                        "discountprice" => $productDiscountPrice,
+                        "currency" => get_woocommerce_currency(),
+                        "sku" => $productSku,
+                        "categoryid" => $productCategoryID,
+                        "category" => $productCategoryName,
+                        "link" => get_permalink($productID),
+                        "image" => get_the_post_thumbnail_url($productID, 'full'),
+                        'api_key' => $this->apiKey,
+                        'domain' => $this->domain,
+                    );
+                    $this->vboutApp2->Product($productData, 1);
+                }
+            }
+        }
+
+        if (!$productFound) {
+            echo __('No products found');
         }
         wp_reset_postdata();
 
@@ -396,7 +450,7 @@ class WCVbout
 
 
     /**
-     * Cart Handeling
+     * Cart Handling
      */
 
     /**
@@ -430,40 +484,60 @@ class WCVbout
             // Get Cart Items
             foreach ($products as $product) {
                 $productID = $product['product_id'];
-                $productObj = new WC_Product($productID);
-                $productName = $productObj->get_name();
-                $productDescription = $productObj->get_description();
-                $productSku = $productObj->get_sku();
-                $productPrice = ($productObj->get_price()) ? $productObj->get_price() : '0.0';
-                $productDiscountPrice = ($productObj->get_sale_price()) ? $productObj->get_sale_price() : '0.0';
                 $productQuantity = $product['quantity'];
-
-                $variationID = $product['variation_id'];
-
+                $productVariations = array();
                 $categoryID = '';
                 $categoryName = '';
                 $image = '';
+                try {
+                    $productObj = new WC_Product($productID);
+                    $productName = $productObj->get_name();
+                    $productDescription = $productObj->get_description();
+                    $productSku = $productObj->get_sku();
+                    $productPrice = ($productObj->get_price()) ? $productObj->get_price() : '0.0';
+                    $productDiscountPrice = ($productObj->get_sale_price()) ? $productObj->get_sale_price() : '0.0';
 
-                $productVariations = array();
-                if ($variationID != 0) {
-                    $variationObj = wc_get_product($variationID);
-                    if ($variationObj) {
-                        $productVariations = $variationObj->get_attributes();
-                        foreach ($productVariations as $key => $productVariation) {
-                            if (strpos($key, 'pa_') !== false) {
-                                $cleanAttributeKey = explode('pa_', $key)[1];
-                                $productVariations[$cleanAttributeKey] = $productVariation;
-                                unset($productVariations[$key]);
+                    $variationID = $product['variation_id'];
+                    if ($variationID != 0) {
+                        $variationObj = wc_get_product($variationID);
+                        if ($variationObj) {
+                            $productVariations = $variationObj->get_attributes();
+                            foreach ($productVariations as $key => $productVariation) {
+                                if (strpos($key, 'pa_') !== false) {
+                                    $cleanAttributeKey = explode('pa_', $key)[1];
+                                    $productVariations[$cleanAttributeKey] = $productVariation;
+                                    unset($productVariations[$key]);
+                                }
                             }
+                            $imageID = $variationObj->get_image_id();
+                            $image = wp_get_attachment_image_url($imageID, 'full');
                         }
-                        $imageID = $variationObj->get_image_id();
-                        $image = wp_get_attachment_image_url($imageID, 'full');
+                    } else {
+                        $image = get_the_post_thumbnail_url($productID, 'full');
                     }
-                } else {
-                    $image = get_the_post_thumbnail_url($productID, 'full');
+
+                    $category = get_the_terms($productID, 'product_cat');
+                } catch (\Exception $ex) {
+                    // Non Woocommerce Products
+                    # LearPress
+                    $postType = get_post_type($productID);
+                    if (class_exists('LearnPress') && $postType == 'lp_course') {
+                        $productObj = $product['data']->post;
+                        $productName = $productObj->post_title;
+                        $productDescription = $productObj->post_content;
+                        $productSku = null;
+                        $productDiscountPrice = get_post_meta($productID, '_lp_sale_price', true);
+                        if ($productDiscountPrice) {
+                            $productPrice = $productDiscountPrice;
+                        } else {
+                            $productDiscountPrice = '0.0';
+                            $productPrice = (get_post_meta($productID, '_lp_price', true)) ? get_post_meta($productID, '_lp_price', true) : '0.0';
+                        }
+                        $image = get_the_post_thumbnail_url($productID, 'full');
+                        $category = get_the_terms($productID, 'course_category');
+                    }
                 }
 
-                $category = get_the_terms($productID, 'product_cat');
                 if (is_array($category)) {
                     $categoryID = $category[0]->term_id;
                     $categoryName = $category[0]->name;
@@ -690,6 +764,46 @@ class WCVbout
         }
     }
 
+    public function lp_course_add($post_id, $post, $update)
+    {
+        if ($this->product_feed == 1) {
+            if ($post->post_status == 'publish' && $post->post_type == 'lp_course') {
+                $productID = $post_id;
+                $productObj = $post;
+                $productName = $productObj->post_title;
+                $productDescription = $productObj->post_content;
+                $productSku = null;
+                $productPrice = (get_post_meta($productID, '_lp_price', true)) ? get_post_meta($productID, '_lp_price', true) : '0.0';
+                $productDiscountPrice = (get_post_meta($productID, '_lp_sale_price', true)) ? get_post_meta($productID, '_lp_sale_price', true) : '0.0';
+
+                $productCategoryID = 'N/A';
+                $productCategoryName = 'N/A';
+                $terms = get_the_terms($productID, 'course_category');
+                if (count($terms) > 0) {
+                    $productCategoryID = $terms[0]->term_id;
+                    $productCategoryName = $terms[0]->name;
+                }
+
+                $productData = array(
+                    "productid" => $productID,
+                    "name" => $productName,
+                    "price" => $productPrice,
+                    "description" => $productDescription,
+                    "discountprice" => $productDiscountPrice,
+                    "currency" => get_woocommerce_currency(),
+                    "sku" => $productSku,
+                    "categoryid" => $productCategoryID,
+                    "category" => $productCategoryName,
+                    "link" => get_permalink($productID),
+                    "image" => get_the_post_thumbnail_url($productID, 'full'),
+                    'api_key' => $this->apiKey,
+                    'domain' => $this->domain,
+                );
+                $this->vboutApp2->Product($productData, 1);
+            }
+        }
+    }
+
     /**
      * Products View Function
      */
@@ -710,21 +824,21 @@ class WCVbout
             $current_user = wp_get_current_user();
 
             $productData = array(
-                "customer"      => $current_user->user_email,
+                "customer" => $current_user->user_email,
                 "productid" => $productID,
                 "name" => $productName,
                 "price" => $productPrice,
                 "description" => $productDescription,
                 "discountprice" => $productDiscountPrice,
-                "currency"      => get_woocommerce_currency(),
+                "currency" => get_woocommerce_currency(),
                 "sku" => $productSku,
-                'ipaddress'     =>$this->getClientIPAddress(),
+                'ipaddress' => $this->getClientIPAddress(),
                 "categoryid" => $productCategoryID,
                 "category" => $productCategoryName,
                 "link" => get_permalink($productID),
                 "image" => get_the_post_thumbnail_url($productID, 'full'),
-                "domain"        => $this->domain,
-                "uniqueid"      => $this->sessionId,
+                "domain" => $this->domain,
+                "uniqueid" => $this->sessionId,
             );
             $this->vboutApp2->Product($productData, 1);
         }
@@ -742,13 +856,13 @@ class WCVbout
             $current_user = wp_get_current_user();
 
             $category = array(
-                "customer"      => $current_user->user_email,
-                "domain"        => $this->domain,
-                "categoryid"    => $queried_category->term_id,
-                "name"          => $queried_category->name,
-                "link"          => get_category_link($queried_category->term_id),
-                'ipaddress'     =>$this->getClientIPAddress(),
-                "uniqueid"      => $this->sessionId,
+                "customer" => $current_user->user_email,
+                "domain" => $this->domain,
+                "categoryid" => $queried_category->term_id,
+                "name" => $queried_category->name,
+                "link" => get_category_link($queried_category->term_id),
+                'ipaddress' => $this->getClientIPAddress(),
+                "uniqueid" => $this->sessionId,
             );
             $result = $this->vboutApp2->Category($category, 1);
         }
@@ -761,23 +875,23 @@ class WCVbout
     public function wc_product_search($query)
     {
         if ($this->search == 1) {
-        if ( !is_admin() && $query->is_main_query() ) {
+            if (!is_admin() && $query->is_main_query()) {
                 if ($query->is_search) {
-                $searchQuery    = get_search_query();
-                $current_user   = wp_get_current_user();
-                $ipAddress      = $this->getClientIPAddress();
+                    $searchQuery = get_search_query();
+                    $current_user = wp_get_current_user();
+                    $ipAddress = $this->getClientIPAddress();
 
-                $searchPayload = array(
-                    'domain'    => $this->domain,
-                    'customer'  => $current_user->user_email,
-                    'query'     => $searchQuery,
-                    'ipaddress' => $ipAddress,
-                    'uniqueid'  => $this->sessionId,
-                );
-                $this->vboutApp2->sendProductSearch($searchPayload);
+                    $searchPayload = array(
+                        'domain' => $this->domain,
+                        'customer' => $current_user->user_email,
+                        'query' => $searchQuery,
+                        'ipaddress' => $ipAddress,
+                        'uniqueid' => $this->sessionId,
+                    );
+                    $this->vboutApp2->sendProductSearch($searchPayload);
+                }
             }
         }
-    }
     }
 
     /**
@@ -875,12 +989,12 @@ class WCVbout
      * Order update with status ( From admin side)
      * @param $order
      */
-    public function wc_order_update( $order )
+    public function wc_order_update($order)
     {
         if ($this->abandoned_carts == 1) {
 
             if ($order->get_customer_id()) {
-            $current_user = get_userdata( $order->get_customer_id() );
+                $current_user = get_userdata($order->get_customer_id());
                 $firstName = $current_user->user_firstname;
                 $lastName = $current_user->user_lastname;
                 $email = $current_user->user_email;
@@ -891,44 +1005,44 @@ class WCVbout
             }
 
             $order = array(
-                "domain"            => $this->domain,
-                "orderid"           => $order->get_id(),
-                "paymentmethod"     => $order->get_payment_method(),
-                "grandtotal"        => $order->get_total(),
-                "orderdate"         => strtotime($order->get_date_created()),
-                "shippingmethod"    => $order->get_shipping_method(),
-                "shippingcost"      => $order->get_shipping_total(),
-                "subtotal"          => $order->get_subtotal(),
-                "discountvalue"     => $order->get_total_discount(),
-                "taxcost"           => $order->get_tax_totals(),
-                "otherfeecost"      => $order->get_fees(),
-                "currency"          => $order->get_currency(),
-                "status"            => $order->get_status(),
-                "notes"             => $order->get_customer_note(),
-                "storename"         => $_SERVER['HTTP_HOST'],
-                "customerinfo"      => array(
+                "domain" => $this->domain,
+                "orderid" => $order->get_id(),
+                "paymentmethod" => $order->get_payment_method(),
+                "grandtotal" => $order->get_total(),
+                "orderdate" => strtotime($order->get_date_created()),
+                "shippingmethod" => $order->get_shipping_method(),
+                "shippingcost" => $order->get_shipping_total(),
+                "subtotal" => $order->get_subtotal(),
+                "discountvalue" => $order->get_total_discount(),
+                "taxcost" => $order->get_tax_totals(),
+                "otherfeecost" => $order->get_fees(),
+                "currency" => $order->get_currency(),
+                "status" => $order->get_status(),
+                "notes" => $order->get_customer_note(),
+                "storename" => $_SERVER['HTTP_HOST'],
+                "customerinfo" => array(
                     "firstname" => $firstName,
                     "lastname" => $lastName,
                     "email" => $email,
-                    "phone"             => $order->get_billing_phone(),
-                    "company"           => $order->get_billing_company(),
+                    "phone" => $order->get_billing_phone(),
+                    "company" => $order->get_billing_company(),
                 ),
-                "billinginfo"       => array(
-                    "firstname"         => $order->get_billing_first_name(),
-                    "lastname"          => $order->get_billing_last_name(),
-                    "email"             => $order->get_billing_email(),
-                    "phone"             => $order->get_billing_phone(),
-                    "company"           => $order->get_billing_company(),
-                    "address"           => $order->get_billing_address_1(),
-                    "address2"          => $order->get_billing_address_2(),
-                    "city"              => $order->get_billing_city(),
-                    "statename"         => $order->get_billing_state(),
-                    "countryname"       => $order->get_billing_country(),
-                    "zipcode"           => $order->get_billing_postcode(),
+                "billinginfo" => array(
+                    "firstname" => $order->get_billing_first_name(),
+                    "lastname" => $order->get_billing_last_name(),
+                    "email" => $order->get_billing_email(),
+                    "phone" => $order->get_billing_phone(),
+                    "company" => $order->get_billing_company(),
+                    "address" => $order->get_billing_address_1(),
+                    "address2" => $order->get_billing_address_2(),
+                    "city" => $order->get_billing_city(),
+                    "statename" => $order->get_billing_state(),
+                    "countryname" => $order->get_billing_country(),
+                    "zipcode" => $order->get_billing_postcode(),
                 ),
-                "shippinginfo"      => array(
-                    "firstname"         => $order->get_shipping_first_name(),
-                    "lastname"          => $order->get_shipping_last_name(),
+                "shippinginfo" => array(
+                    "firstname" => $order->get_shipping_first_name(),
+                    "lastname" => $order->get_shipping_last_name(),
                     "email" => $order->get_billing_email(),
                     "phone" => $order->get_billing_phone(),
                     "company" => $order->get_shipping_company(),
@@ -966,76 +1080,96 @@ class WCVbout
             $_SESSION['checkout_bool'] = true;
 
             $store = array(
-                "domain"        => $this->domain,
-                "cartcurrency"  => get_woocommerce_currency(),
-                "cartid"        => $this->cartID,
-                'ipaddress'     => $this->getClientIPAddress(),
-                "customer"      => $current_user->user_email,
-                "storename"     => $_SERVER['HTTP_HOST'],
-                "abandonurl"    => $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'],
-                "uniqueid"      => $this->sessionId,
+                "domain" => $this->domain,
+                "cartcurrency" => get_woocommerce_currency(),
+                "cartid" => $this->cartID,
+                'ipaddress' => $this->getClientIPAddress(),
+                "customer" => $current_user->user_email,
+                "storename" => $_SERVER['HTTP_HOST'],
+                "abandonurl" => $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'],
+                "uniqueid" => $this->sessionId,
             );
             $this->vboutApp2->Cart($store, 1);
 
             // Get Cart Items
             foreach ($products as $product) {
                 $productID = $product['product_id'];
-                $productObj = new WC_Product($productID);
-                $productName = $productObj->get_name();
-                $productDescription = $productObj->get_description();
-                $productSku = $productObj->get_sku();
-                $productPrice = ($productObj->get_price()) ? $productObj->get_price() : '0.0';
-                $productDiscountPrice = ($productObj->get_sale_price()) ? $productObj->get_sale_price() : '0.0';
                 $productQuantity = $product['quantity'];
-
-                $variationID = $product['variation_id'];
-
+                $productVariations = array();
                 $categoryID = '';
                 $categoryName = '';
                 $image = '';
+                try {
+                    $productObj = new WC_Product($productID);
+                    $productName = $productObj->get_name();
+                    $productDescription = $productObj->get_description();
+                    $productSku = $productObj->get_sku();
+                    $productPrice = ($productObj->get_price()) ? $productObj->get_price() : '0.0';
+                    $productDiscountPrice = ($productObj->get_sale_price()) ? $productObj->get_sale_price() : '0.0';
 
-                $productVariations = array();
-                if ($variationID != 0) {
-                    $variationObj = wc_get_product($variationID);
-                    if ($variationObj) {
-                        $productVariations = $variationObj->get_attributes();
-                        foreach ($productVariations as $key => $productVariation) {
-                            if (strpos($key, 'pa_') !== false) {
-                                $cleanAttributeKey = explode('pa_', $key)[1];
-                                $productVariations[$cleanAttributeKey] = $productVariation;
-                                unset($productVariations[$key]);
+                    $variationID = $product['variation_id'];
+                    if ($variationID != 0) {
+                        $variationObj = wc_get_product($variationID);
+                        if ($variationObj) {
+                            $productVariations = $variationObj->get_attributes();
+                            foreach ($productVariations as $key => $productVariation) {
+                                if (strpos($key, 'pa_') !== false) {
+                                    $cleanAttributeKey = explode('pa_', $key)[1];
+                                    $productVariations[$cleanAttributeKey] = $productVariation;
+                                    unset($productVariations[$key]);
+                                }
                             }
+                            $imageID = $variationObj->get_image_id();
+                            $image = wp_get_attachment_image_url($imageID, 'full');
                         }
-                        $imageID = $variationObj->get_image_id();
-                        $image = wp_get_attachment_image_url($imageID, 'full');
+                    } else {
+                        $image = get_the_post_thumbnail_url($productID, 'full');
                     }
-                } else {
-                    $image = get_the_post_thumbnail_url($productID, 'full');
+
+                    $category = get_the_terms($productID, 'product_cat');
+                } catch (\Exception $ex) {
+                    // Non Woocommerce Products
+                    # LearPress
+                    $postType = get_post_type($productID);
+                    if (class_exists('LearnPress') && $postType == 'lp_course') {
+                        $productObj = $product['data']->post;
+                        $productName = $productObj->post_title;
+                        $productDescription = $productObj->post_content;
+                        $productSku = null;
+                        $productDiscountPrice = get_post_meta($productID, '_lp_sale_price', true);
+                        if ($productDiscountPrice) {
+                            $productPrice = $productDiscountPrice;
+                        } else {
+                            $productDiscountPrice = '0.0';
+                            $productPrice = (get_post_meta($productID, '_lp_price', true)) ? get_post_meta($productID, '_lp_price', true) : '0.0';
+                        }
+                        $image = get_the_post_thumbnail_url($productID, 'full');
+                        $category = get_the_terms($productID, 'course_category');
+                    }
                 }
 
-                $category = get_the_terms($productID, 'product_cat');
                 if (is_array($category)) {
                     $categoryID = $category[0]->term_id;
                     $categoryName = $category[0]->name;
                 }
 
                 $productData = array(
-                    "domain"        => $this->domain,
-                    "cartid"        => $this->cartID,
+                    "domain" => $this->domain,
+                    "cartid" => $this->cartID,
                     "productid" => (string)$productID,
                     "name" => $productName,
                     "price" => $productPrice,
                     "description" => $productDescription,
                     "discountprice" => $productDiscountPrice,
-                    "currency"      => get_woocommerce_currency(),
+                    "currency" => get_woocommerce_currency(),
                     "quantity" => (string)$productQuantity,
                     "categoryid" => $categoryID,
                     "variation" => $productVariations,
-                    "category"      => $categoryName,
+                    "category" => $categoryName,
                     "sku" => $productSku,
                     "link" => get_permalink($productID),
-                    "image"         => $image,
-                    "uniqueid"      => $this->sessionId,
+                    "image" => $image,
+                    "uniqueid" => $this->sessionId,
                 );
                 $this->vboutApp2->CartItem($productData, 1);
             }

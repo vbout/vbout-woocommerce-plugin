@@ -4,7 +4,7 @@
  * Plugin Name: VBOUT Woocommerce Plugin
  * Plugin URI: https://vbout.com
  * Description: A woocommerce extension to integrate with VBOUT.
- * Version: 3.2
+ * Version: 3.3
  * Author: VBOUT Inc.
  * Author URI: https://vbout.com
  * Developer: VBOUT Dev Team
@@ -32,7 +32,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 
     $WCVbout = new App\WCVbout();
 
-    define('vbout_woocommerce_current_version', '3.2');
+    define('vbout_woocommerce_current_version', '3.3');
     define('vbout_woocommerce_slug', 'vbout-woocommerce-integration');
     define('vbout_woocommerce_updater', 'https://app.vbout.com/integrations/vbout_woocommerce_plugin.json');
 
