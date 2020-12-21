@@ -91,7 +91,9 @@ class WCVbout
             add_action('sync_current_products', array($this, 'syncCurrentProducts'));
 
             $this->loadConfig();
-            session_start();
+            session_start([
+                'read_and_close' => true,
+            ]);
             // Load email marketing object
             $this->vboutApp2 = new EcommerceWS(array('api_key' => $this->apiKey));
         } catch (\Exception $e) {
