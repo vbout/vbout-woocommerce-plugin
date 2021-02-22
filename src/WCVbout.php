@@ -360,6 +360,7 @@ class WCVbout
                 }
 
                 $productData = array(
+                    "sync" => true,
                     "productid" => $productID,
                     "name" => $productName,
                     "price" => $productPrice,
