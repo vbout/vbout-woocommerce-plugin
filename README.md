@@ -1,49 +1,48 @@
 # WooCommerce-Plugin-Vbout
-WooCommerce Plugin that link Metadata of orders, carts customers , searches, products and with Integration settings.
+WooCommerce Plugin that link Metadata of orders, carts customers, searches, products and Integration settings.
 
 ## The Plugin has the Following Features :
 
-  - Abandoned Cart Data
-  - Search Data 
-  - Registering a new customer data
-  - Adding a new Product Data ( With variations, Category , price and images , descriptions)
-  - Product Visits Data
-  - Product Category Visit Data
+  - Abandoned Carts
+  - Registering a new customer
+  - Adding a new Product
+  - Product Search 
+  - Product Visits
+  - Category Visit
   - Syncing Customers ( For customer data prior the use of the plugin) 
-  - Syncing Product   ( For Product data prior the use of the plugin)
+  - Syncing Products   ( For Product data prior the use of the plugin)
+  - Orders Creation
   ## limitations : 
     1 - Upon registration, the only attribute is sent is user email, first name and last name are not sent (this is handeled once this user signs in).
-    2 - if the Administrator has many Customers/Products, the sync might take a while , so it needs optimization with cron.php in WooCommerce.
+    2 - Old Customers And Products are synced using a cron, you'll have to wait until data shows under VBOUT.
   
 ## Variations : 
   
- Variations are sent as an array upon adding a product, syncing a product and viewing a product. But when purchasing a certain variation of a product, we send the new product data to be viewed ( New Category, New Price, New Variation Name , New SKU) to be previewed in Vbout.
+  Variations are sent as an array upon adding a product, syncing a product and viewing a product. 
+  But when purchasing a certain variation of a product, we send the new product data to be viewed ( New Category, New Price, New Variation Name , New SKU) to be previewed in Vbout.
  
 ## Search : 
   
-There is an listener/observer for search and it recives the "term" searched form.
+  There is an listener/observer for search and it receives the "term" searched form.
   
 ## Orders and Abandonded Carts : 
   
   ### Checkout : 
-    
-        There is a listener for checkout and does the following  since WooCommerce that allows you to checkout without registration, and it acts like add-to-cart + order-creation.
+    There is a listener for checkout and does the following since WooCommerce allows you to checkout without registration, and it acts like add-to-cart + order-creation.
 
   ### Create and Update Cart  : 
-          there is a listener for both Cart Update and Cart create and they have the following functionalities : 
-            - Get the current logged in customer and it's data. 
-            - Create a new cart
-            - Products are added ( a loop to handle them ) 
-
-  ### Cart Item Remove : 
-
-        Since the variation is handeled as a product with an independent Product id, upon this function we get the variation id , and the parent ID. we get the variation ( since many products will have the same product id but with different variations) to remove the product id with the same variation ( they will be comapred on VBOUT Server to check if they are the same product or different).
-
-  ### Orders Create and Update : 
-      The both have different listeners, they work the same. An Order is added with Shipping and Biling information, alongside with customer's information.
-      
+    There is a listener for both Cart Update and Cart create and they have the following functionalities : 
+      - Get the current logged in customer and it's data. 
+      - Create a new cart
+      - Add Products to cart ( a loop to handle them ) 
       - Updating Cart : 
           - In the process of updating cart, any update to status( Cancelled, Pending, Paid, Shipped/success), details, products is updated directly.
+ 
+  ### Cart Item Remove : 
+    Since the variation is handeled as a product with an independent Product id, upon this function we get the variation id , and the parent ID. we get the variation ( since many products will have the same product id but with different variations) to remove the product id with the same variation ( they will be comapred on VBOUT to check if they are the same product or different).
+
+  ### Orders Create and Update : 
+    Both have different listeners, they work the same. An Order is added with Shipping and Biling information, alongside with customer's information.
 
 ## Customers Add, Update and Sync :
     - Customer email is added upon registration. We get customers data upon loggin in.
@@ -65,7 +64,7 @@ There is an listener/observer for search and it recives the "term" searched form
     
 ## IP and Customer Link: 
     - If a customer is roaming the website, and the features are turned on, the IP will be sent at every event. 
-    - Upon User registration, all the searches, Cart , product and category views will be linked to this account through IP.
+    - Upon User registration, all the searches, carts, products and categories views will be linked to this account through IP.
     
       
 ## Listeners ---- > Functions Used and Explanation :
