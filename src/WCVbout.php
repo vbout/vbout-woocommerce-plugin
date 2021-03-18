@@ -857,19 +857,21 @@ class WCVbout
 
         if ($this->category_visits == 1) {
             global $product;
-            $queried_category = get_the_terms($product->get_id(), 'product_cat')[0];
-            $current_user = wp_get_current_user();
+            if (isset($product->get_id())) {
+                $queried_category = get_the_terms($product->get_id(), 'product_cat')[0];
+                $current_user = wp_get_current_user();
 
-            $category = array(
-                "customer" => $current_user->user_email,
-                "domain" => $this->domain,
-                "categoryid" => $queried_category->term_id,
-                "name" => $queried_category->name,
-                "link" => get_category_link($queried_category->term_id),
-                'ipaddress' => $this->getClientIPAddress(),
-                "uniqueid" => $this->sessionId,
-            );
-            $result = $this->vboutApp2->Category($category, 1);
+                $category = array(
+                    "customer" => $current_user->user_email,
+                    "domain" => $this->domain,
+                    "categoryid" => $queried_category->term_id,
+                    "name" => $queried_category->name,
+                    "link" => get_category_link($queried_category->term_id),
+                    'ipaddress' => $this->getClientIPAddress(),
+                    "uniqueid" => $this->sessionId,
+                );
+                $result = $this->vboutApp2->Category($category, 1);
+            }
         }
     }
 
