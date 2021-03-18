@@ -857,7 +857,7 @@ class WCVbout
 
         if ($this->category_visits == 1) {
             global $product;
-            if (isset($product->get_id())) {
+            if ($product != NULL) {
                 $queried_category = get_the_terms($product->get_id(), 'product_cat')[0];
                 $current_user = wp_get_current_user();
 
