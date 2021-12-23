@@ -1,18 +1,12 @@
 <?php
 
-
-use App\WCVbout;
-require __DIR__ . '/vendor/autoload.php';
-
-if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-    exit;
+if (!defined('ABSPATH')) {
+	exit;
 }
-else
-{
-    if ( defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-        //Uninstalling process
-        $vboutUninstall = new WCVbout();
-        $vboutUninstall->init();
-        $vboutUninstall->uninstall();
-    }
+
+if ( defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+
+	define( 'VBOUT_WOOCOMMERCE_UNINSTALL_PLUGIN', true );
+
+	include(__DIR__ . '/vbout.php');
 }

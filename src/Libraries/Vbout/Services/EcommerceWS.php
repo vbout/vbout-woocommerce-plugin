@@ -1,12 +1,9 @@
 <?php
 
-
 namespace App\Libraries\Vbout\Services;
-
 
 use App\Libraries\Vbout\Vbout;
 use App\Libraries\Vbout\VboutException;
-use App\Models\Setting;
 
 class EcommerceWS extends Vbout
 {
@@ -52,6 +49,22 @@ class EcommerceWS extends Vbout
 
         return $result;
     }
+    public function CartUpsert($data) {
+        $result = array();
+        try {
+            $this->set_method('POST');
+			$insertRecord = $this->UpsertCart($data);
+
+            if ($insertRecord != null && isset($insertRecord['data'])) {
+                $result = $insertRecord['data'];
+            }
+        }
+        catch (VboutException $ex) {
+            $result = $ex->getData();
+        }
+
+        return $result;
+    }
     public function CartItem($data, $action)
     {
 
@@ -85,6 +98,24 @@ class EcommerceWS extends Vbout
             elseif ($action == 2 )
                 $insertRecord = $this->updateorder($data);
             else $result = "Error";
+
+            if ($insertRecord != null && isset($insertRecord['data'])) {
+                $result = $insertRecord['data'];
+            }
+        } catch (VboutException $ex) {
+            $result = $ex->getData();
+        }
+
+        return $result;
+    }
+
+    public function CartOrderCreate($data, $action) {
+
+        $result = array();
+        try {
+            $this->set_method('POST');
+
+			$insertRecord = $this->createCartOrder($data);
 
             if ($insertRecord != null && isset($insertRecord['data'])) {
                 $result = $insertRecord['data'];

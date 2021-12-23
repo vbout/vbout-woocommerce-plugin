@@ -2,9 +2,6 @@
 
 namespace App\Libraries\Vbout;
 
-// require_once dirname(__FILE__) . '/VboutException.php';
-use App\Libraries\Vbout\VboutException;
-
 class Vbout {
     /**
      * Vbout API endpoint
@@ -45,7 +42,7 @@ class Vbout {
 		
 		if ($api_endpoint != NULL) $this->api_endpoint;
 		if ($api_version != NULL) $this->api_version;
-        
+
 		$this->init();
 		
 		if (is_array($tokens)) {
@@ -123,40 +120,34 @@ class Vbout {
 
 	public function safeCall($name, $args)
     {
+		$header = array();
+		$getParams = array();
+		$postParams = '';
+
 		// Unpack our arguments
 		if( $this->method == 'GET' ) {
 			if (is_array($args) && array_key_exists(0, $args) && is_array($args[0])) {
-				$params = $args[0];
-			} else {
-				$params = array();
+				$getParams = $args[0];
 			}
 		} else {
-			$params = array();
 			$fields = $args[0];
-			
-			$fields_string = '';
-			
-			foreach($fields as $key=>$value) { 
-				if (is_array($value)) {
-					foreach($value as $k1=>$v1)
-						if(!is_object($v1))
-						    $fields_string .= $key . '[' . $k1 . ']='.$v1.'&';
-				} else {
-					$fields_string .= $key.'='.$value.'&'; 
-				}
-			}
-			
-			rtrim($fields_string, '&');
+
+			$postParams = is_array($fields) && !empty($fields) ? json_encode($fields) : '{}';
+			$header[] = 'Content-Type: application/json';
 		}
-		
+
         // Add authentication tokens to querystring
 		if (!isset($this->auth_tokens['access_token'])) {
-			$params = array_merge($params, $this->auth_tokens);
+			$getParams = array_merge($getParams, $this->auth_tokens);
 		}
 
         // Build our request url, urlencode querystring params
-        $request_url = $this->protocol . $this->api_endpoint . '/' . $this->api_version . $this->api_url . $name . '.' . strtolower($this->api_response) . '?' . http_build_query($params);
-        
+        $request_url = $this->protocol . $this->api_endpoint . '/' . $this->api_version . $this->api_url . $name . '.' . strtolower($this->api_response) . '?' . http_build_query($getParams);
+
+		if(defined('VBOUT_WOOCOMMERCE_API_URL')) {
+			$request_url = VBOUT_WOOCOMMERCE_API_URL . trim($this->api_url . $name, '/') . '&' . http_build_query($getParams) . '&';
+		}
+
 		$ch = curl_init();
 
 		if( $this->method == 'GET' ) {
@@ -164,7 +155,7 @@ class Vbout {
 		} else {
 			curl_setopt($ch, CURLOPT_POST, count($fields));
 			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-			curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+			curl_setopt($ch,CURLOPT_POSTFIELDS, $postParams);
 		}
 
         $header[] = "Accept: application/json";

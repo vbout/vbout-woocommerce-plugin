@@ -1,16 +1,16 @@
 # WooCommerce-Plugin-Vbout
-WooCommerce Plugin that link Metadata of orders, carts customers, searches, products and Integration settings.
+WooCommerce Plugin that link Metadata of orders, cart customers, searches, products and Integration settings.
 
 ## The Plugin has the Following Features :
 
-  - Abandoned Carts
+  - Abandoned carts
   - Registering a new customer
   - Adding a new Product
-  - Product Search 
-  - Product Visits
+  - Product search 
+  - Product visits
   - Category Visit
-  - Syncing Customers ( For customer data prior the use of the plugin) 
-  - Syncing Products   ( For Product data prior the use of the plugin)
+  - Syncing customers ( For customer data prior the use of the plugin) 
+  - Syncing products   ( For Product data prior the use of the plugin)
   - Orders Creation
   ## limitations : 
     1 - Upon registration, the only attribute is sent is user email, first name and last name are not sent (this is handeled once this user signs in).
@@ -36,7 +36,7 @@ WooCommerce Plugin that link Metadata of orders, carts customers, searches, prod
       - Create a new cart
       - Add Products to cart ( a loop to handle them ) 
       - Updating Cart : 
-          - In the process of updating cart, any update to status( Cancelled, Pending, Paid, Shipped/success), details, products is updated directly.
+      - In the process of updating cart, any update to status( Cancelled, Pending, Paid, Shipped/success), details, products is updated directly.
  
   ### Cart Item Remove : 
     Since the variation is handeled as a product with an independent Product id, upon this function we get the variation id , and the parent ID. we get the variation ( since many products will have the same product id but with different variations) to remove the product id with the same variation ( they will be comapred on VBOUT to check if they are the same product or different).
